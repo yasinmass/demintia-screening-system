@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Healthcare AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/auth.js"></script>
+</head>
+
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+        <h1 class="text-2xl font-bold text-center mb-8">Sign In</h1>
+        <form id="login-form" class="space-y-6">
+            <div><label class="block text-sm font-bold mb-2">Email</label><input type="email" id="email" required
+                    class="w-full p-3 rounded-xl border"></div>
+            <div><label class="block text-sm font-bold mb-2">Password</label><input type="password" id="password"
+                    required class="w-full p-3 rounded-xl border"></div>
+            <div id="error-msg" class="text-red-500 text-sm hidden">Invalid credentials.</div>
+            <button type="submit"
+                class="w-full py-4 bg-teal-500 text-white font-bold rounded-xl transition-all active:scale-95">Login</button>
+        </form>
+        <p class="mt-6 text-center text-gray-500 tracking-tight">Need an account? <a href="signup.html"
+                class="text-teal-600 font-bold">Sign Up</a></p>
+    </div>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (login(document.getElementById('email').value, document.getElementById('password').value)) {
+                window.location.href = 'index.html';
+            } else {
+                document.getElementById('error-msg').classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+
+</html>
