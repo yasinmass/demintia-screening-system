@@ -1,62 +1,70 @@
 // js/result.js
-async function loadResults() {
-    const features = {
-        pause_duration: parseFloat(localStorage.getItem('pause_duration') || '0'),
-        speech_rate: parseFloat(localStorage.getItem('speech_rate') || '0'),
-        word_count: parseInt(localStorage.getItem('word_count') || '0'),
-        reaction_time: parseFloat(localStorage.getItem('reaction_time') || '0'),
-        quiz_score: parseFloat(localStorage.getItem('quizScore') || '0')
-    };
 
-    document.getElementById('quiz-score-display').textContent = `${features.quiz_score}%`;
-    document.getElementById('speech-rate-display').textContent = features.speech_rate;
-    document.getElementById('reaction-time-display').textContent = `${features.reaction_time}s`;
-
+function loadResults() {
     try {
-        const response = await fetch("http://localhost:8000/predict", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(features)
-        });
+        const resultsData = localStorage.getItem('assessment_results');
+        if (!resultsData) {
+            console.warn("No assessment data found. Redirecting to quiz...");
+            // Non-blocking redirect if on the same origin
+            if (window.location.protocol !== 'file:') {
+                // window.location.href = 'quiz.html';
+            }
+            return;
+        }
 
-        const data = await response.json();
-        displayRisk(data.risk_level, data.risk_probability);
-    } catch (err) {
-        console.error("AI Backend offline:", err);
-        document.getElementById('risk-level-text').textContent = "Offline";
-        document.getElementById('risk-description').textContent = "Could not connect to AI prediction service. Please ensure the Python backend is running.";
+        const assessment = JSON.parse(resultsData);
+
+        // Update UI elements with basic checks
+        updateElementText('orientation-score', `${assessment.orientation_score}/10`);
+        updateElementText('memory-score', `${assessment.memory_score}/10`);
+        updateElementText('executive-score', `${assessment.executive_score}/10`);
+        updateElementText('total-score-display', `${assessment.total_score}/30`);
+        updateElementText('reaction-time-display', `${assessment.average_reaction_time}s`);
+
+        displayRisk(assessment.final_risk_level);
+
+        // Log for debugging
+        console.log("Assessment results loaded successfully:", assessment);
+    } catch (error) {
+        console.error("Error loading assessment results:", error);
+        document.getElementById('risk-level-text').textContent = "Error Loading Data";
     }
 }
 
-function displayRisk(level, prob) {
+function updateElementText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+}
+
+function displayRisk(level) {
     const card = document.getElementById('risk-card');
     const icon = document.getElementById('risk-icon');
     const text = document.getElementById('risk-level-text');
     const desc = document.getElementById('risk-description');
-    const probDisp = document.getElementById('risk-prob-display');
     const summary = document.getElementById('final-index-summary');
 
-    probDisp.textContent = `${(prob * 100).toFixed(1)}%`;
+    if (!text) return;
+
     text.textContent = `${level} Risk`;
 
     if (level === 'Low') {
-        card.className = "mb-8 p-10 rounded-3xl transition-all duration-700 risk-low";
-        icon.className = "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 icon-bg-low text-white text-3xl font-bold";
+        card.className = "mb-8 p-10 rounded-3xl transition-all duration-700 bg-teal-50 border-2 border-teal-200";
+        icon.className = "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-teal-500 text-white text-3xl font-bold";
         icon.textContent = "✔";
-        desc.textContent = "Your biomarkers indicate a healthy cognitive state.";
-        summary.textContent = "Combined analysis shows stable cognitive function with high speech coherence and strong quiz performance.";
+        desc.textContent = "Excellent! Your orientation, memory, and executive functions are performing at optimal levels.";
+        summary.textContent = "Cognitive biomarkers show strong retention and processing speed. No immediate follow-up required.";
     } else if (level === 'Moderate') {
-        card.className = "mb-8 p-10 rounded-3xl transition-all duration-700 risk-moderate";
-        icon.className = "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 icon-bg-moderate text-white text-3xl font-bold";
+        card.className = "mb-8 p-10 rounded-3xl transition-all duration-700 bg-yellow-50 border-2 border-yellow-200";
+        icon.className = "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-yellow-500 text-white text-3xl font-bold";
         icon.textContent = "⚠";
-        desc.textContent = "Potential cognitive drift detected. Monitor symptoms.";
-        summary.textContent = "Minor variances in speech patterns or reaction times identified. Recommended to repeat test in 30 days.";
+        desc.textContent = "Moderate cognitive drift detected. We suggest monitoring your metrics over the next few weeks.";
+        summary.textContent = "Variations in memory recall or reaction times were identified. Consider consulting a health professional if symptoms persist.";
     } else {
-        card.className = "mb-8 p-10 rounded-3xl transition-all duration-700 risk-high";
-        icon.className = "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 icon-bg-high text-white text-3xl font-bold";
+        card.className = "mb-8 p-10 rounded-3xl transition-all duration-700 bg-red-50 border-2 border-red-200";
+        icon.className = "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-red-500 text-white text-3xl font-bold";
         icon.textContent = "!";
-        desc.textContent = "Significant variance detected. Professional consult advised.";
-        summary.textContent = "High correlation between prolonged pauses and low cognitive orientation scores. Please consult a healthcare professional.";
+        desc.textContent = "Significant variance identified. A professional clinical consultation is advised.";
+        summary.textContent = "Significant deviations in core cognitive domains or slowed processing speeds have been recorded.";
     }
 }
 

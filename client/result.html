@@ -14,22 +14,33 @@
     <div class="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-8 md:p-12 text-center fade-in">
         <h1 class="text-3xl font-bold text-gray-900 mb-8">Cognitive Report</h1>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div class="p-4 bg-teal-50 rounded-xl border border-teal-100">
-                <p class="text-xs text-teal-600 font-bold uppercase mb-1">Quiz Score</p>
-                <div id="quiz-score-display" class="text-2xl font-bold">0%</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div class="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <p class="text-xs text-blue-600 font-bold uppercase mb-1">Orientation</p>
+                <div id="orientation-score" class="text-xl font-bold">0/10</div>
             </div>
-            <div id="speech-rate-card" class="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                <p class="text-xs text-gray-500 font-bold uppercase mb-1">Speech Rate</p>
-                <div id="speech-rate-display" class="text-2xl font-bold">0.0</div>
+            <div class="p-4 bg-purple-50 rounded-xl border border-purple-100">
+                <p class="text-xs text-purple-600 font-bold uppercase mb-1">Memory Recall</p>
+                <div id="memory-score" class="text-xl font-bold">0/10</div>
+            </div>
+            <div class="p-4 bg-orange-50 rounded-xl border border-orange-100">
+                <p class="text-xs text-orange-600 font-bold uppercase mb-1">Executive</p>
+                <div id="executive-score" class="text-xl font-bold">0/10</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <div class="p-4 bg-teal-50 rounded-xl border border-teal-100">
+                <p class="text-xs text-teal-600 font-bold uppercase mb-1">Total Score</p>
+                <div id="total-score-display" class="text-2xl font-bold">0/30</div>
             </div>
             <div id="reaction-time-card" class="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                <p class="text-xs text-gray-500 font-bold uppercase mb-1">Reaction</p>
+                <p class="text-xs text-gray-500 font-bold uppercase mb-1">Reaction Time</p>
                 <div id="reaction-time-display" class="text-2xl font-bold">0.0s</div>
             </div>
         </div>
 
-       
+
         <div id="risk-card" class="mb-8 p-10 rounded-3xl transition-all duration-700 bg-gray-100">
             <div id="risk-icon"
                 class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl font-bold">
