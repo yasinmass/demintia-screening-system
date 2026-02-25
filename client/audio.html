@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Test - Healthcare AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/auth.js"></script>
+    <link rel="stylesheet" href="css/audio.css">
+</head>
+
+<body class="bg-gray-50 text-gray-800 min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-8 md:p-12 text-center">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Voice Biomarker Test</h1>
+        <p class="text-gray-600 mb-8">Speak about your day for at least 30 seconds (up to 60s).</p>
+
+        <div class="relative flex items-center justify-center mb-10">
+            <svg class="w-48 h-48 transform -rotate-90">
+                <circle cx="96" cy="96" r="88" stroke="#f3f4f6" stroke-width="8" fill="transparent" />
+                <circle id="progress-ring" cx="96" cy="96" r="88" stroke="#14b8a6" stroke-width="8" fill="transparent"
+                    stroke-dasharray="552.92" stroke-dashoffset="552.92" stroke-linecap="round"
+                    class="transition-all duration-1000" />
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <div id="mic-container"
+                    class="w-20 h-20 bg-teal-500 rounded-full flex items-center justify-center mb-2 shadow-lg shadow-teal-100">
+                    <svg id="mic-icon" xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                    <svg id="stop-icon" xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white hidden"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10h6v4H9z" />
+                    </svg>
+                </div>
+                <div id="elapsed-time" class="text-2xl font-bold">00:00</div>
+            </div>
+        </div>
+
+        <div id="status-text" class="text-teal-600 font-semibold mb-8 h-6">Ready to record</div>
+
+        <div class="flex flex-col gap-4">
+            <button id="record-btn"
+                class="w-full py-4 bg-teal-500 hover:bg-teal-600 text-white font-bold rounded-xl shadow-lg transition-all">Start
+                Recording</button>
+            <button id="next-btn" disabled
+                class="w-full py-4 bg-gray-100 text-gray-400 font-bold rounded-xl cursor-not-allowed">Next: Memory
+                Quiz</button>
+        </div>
+        <p id="warning-text" class="mt-4 text-red-500 text-sm hidden">Record for at least 10 seconds.</p>
+    </div>
+    <script src="js/audio.js"></script>
+</body>
+
+</html>
