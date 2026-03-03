@@ -2,7 +2,7 @@
 import { startReactionTimer, stopReactionTimer, getAverageReactionTime } from '../modules/reaction_time/reaction.js';
 import { getFinalOutput } from '../modules/cognitive_scoring/scoring.js';
 
-const API_BASE = 'http://127.0.0.1:8000/api';
+const API_BASE = '/api';
 
 const quizContainer = document.getElementById('quiz-container');
 const progressBar = document.getElementById('quiz-progress');
