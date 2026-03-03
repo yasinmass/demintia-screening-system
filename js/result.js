@@ -1,6 +1,6 @@
 // js/result.js — Loads and renders full assessment results from Django API
 
-const API_BASE = 'http://127.0.0.1:8000/api';
+const API_BASE = '/api';
 
 // Thin wrapper: use i18n engine if loaded, else fall back to English
 function t(key) {

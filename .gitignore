@@ -9,6 +9,8 @@ __pycache__/
 
 # Database
 db.sqlite3
+*.sqlite3
+backend/db.sqlite3
 
 # Model files
 *.pkl
@@ -16,5 +18,5 @@ db.sqlite3
 # VS Code
 .vscode/
 
-# OS files
+# OS
 .DS_Store

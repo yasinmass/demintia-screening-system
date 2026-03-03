@@ -1,6 +1,6 @@
 // js/audio.js — Voice biomarker recording + ML analysis
 
-const API_BASE = 'http://127.0.0.1:8000/api';
+const API_BASE = '/api';
 
 let mediaRecorder; let audioChunks = []; let timerInterval;
 let audioContext; let analyser; let silenceStart = 0; let totalSilence = 0;

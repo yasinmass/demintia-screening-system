@@ -1,6 +1,6 @@
 // js/auth.js — Django API-backed authentication
 
-const API_BASE = 'http://127.0.0.1:8000/api';
+const API_BASE = '/api';
 
 function getCurrentPage() {
     const page = window.location.pathname.split('/').pop() || 'index.html';
