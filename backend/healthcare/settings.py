@@ -6,9 +6,16 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-healthcare-hack-secret-key-change-in-production'
+# Load environment variables from .env if present
+try:
+    from dotenv import load_dotenv
+    load_dotenv(BASE_DIR / '.env')
+except ImportError:
+    pass
 
-DEBUG = True
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-healthcare-hack-secret-key-change-in-production')
+
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 't')
 
 ALLOWED_HOSTS = ['*']
 AUTH_USER_MODEL = 'core.User'
@@ -75,19 +82,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'healthcare.wsgi.application'
 
+DB_ENGINE = os.environ.get('DB_ENGINE', 'django.db.backends.mysql')
+DB_NAME = os.environ.get('DB_NAME', 'dementia_db')
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'dementia_db',
-        'USER': 'root',
-        'PASSWORD': 'Vaishnav',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+        'ENGINE': DB_ENGINE,
     }
 }
+
+if 'sqlite3' in DB_ENGINE:
+    DATABASES['default']['NAME'] = BASE_DIR / DB_NAME
+else:
+    DATABASES['default']['NAME'] = DB_NAME
+    DATABASES['default']['USER'] = os.environ.get('DB_USER', 'root')
+    DATABASES['default']['PASSWORD'] = os.environ.get('DB_PASSWORD', 'Vaishnav')
+    DATABASES['default']['HOST'] = os.environ.get('DB_HOST', '127.0.0.1')
+    DATABASES['default']['PORT'] = os.environ.get('DB_PORT', '3306')
+    DATABASES['default']['OPTIONS'] = {
+        'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+    }
 
 AUTH_PASSWORD_VALIDATORS = []
 
@@ -159,11 +173,11 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 #  EMAIL SETTINGS
 # ─────────────────────────────────────────────
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'vaishnavanbalagan18@gmail.com'
-EMAIL_HOST_PASSWORD = 'dcjyymacajbdvkho'  # 16 digit app password
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 't')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'vaishnavanbalagan18@gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'dcjyymacajbdvkho')
 
 # ─────────────────────────────────────────────
 #  REST FRAMEWORK

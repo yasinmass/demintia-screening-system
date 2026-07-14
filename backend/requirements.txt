@@ -27,3 +27,5 @@ scikit-learn
 # Utilities
 pypdf
 python-dateutil
+python-dotenv
+
