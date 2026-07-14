@@ -1,0 +1,29 @@
+# Backend Dependencies for Dementia Screening & Care System
+# Generated for Django 4.2+ and React integration
+
+# Django Core
+Django>=4.2.0
+django-cors-headers
+djangorestframework
+django-allauth[socialaccount]
+dj-rest-auth[with_social]
+gunicorn
+
+
+# Database
+mysqlclient
+
+# Authentication & APIs
+google-auth
+requests
+PyJWT
+
+# ML & Signal Processing
+numpy
+librosa
+joblib
+scikit-learn
+
+# Utilities
+pypdf
+python-dateutil
