@@ -1,1 +1,1 @@
-### Demertia screening and care platform 
+### Dementia screening and care platform 
