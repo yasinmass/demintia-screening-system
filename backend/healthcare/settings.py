@@ -3,12 +3,19 @@ Django settings for HEALTHCARE_HACK project.
 """
 import os
 from pathlib import Path
+import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-healthcare-hack-secret-key-change-in-production'
+# ─────────────────────────────────────────────
+#  ENVIRONMENT VARIABLES
+# ─────────────────────────────────────────────
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
-DEBUG = True
+SECRET_KEY = env('SECRET_KEY')
+
+DEBUG = env.bool('DEBUG', default=False)
 
 ALLOWED_HOSTS = ['*']
 AUTH_USER_MODEL = 'core.User'
@@ -75,14 +82,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'healthcare.wsgi.application'
 
+# ─────────────────────────────────────────────
+#  DATABASE
+# ─────────────────────────────────────────────
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'dementia_db',
-        'USER': 'root',
-        'PASSWORD': 'Vaishnav',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST', default='127.0.0.1'),
+        'PORT': env('DB_PORT', default='3306'),
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         },
@@ -162,8 +172,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'vaishnavanbalagan18@gmail.com'
-EMAIL_HOST_PASSWORD = env('ivjcmlmidjhsyooy')  # 16 digit app password
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 
 # ─────────────────────────────────────────────
 #  REST FRAMEWORK
@@ -189,13 +199,3 @@ SOCIALACCOUNT_PROVIDERS = {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
