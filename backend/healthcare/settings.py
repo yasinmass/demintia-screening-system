@@ -163,7 +163,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'vaishnavanbalagan18@gmail.com'
-EMAIL_HOST_PASSWORD = 'dcjyymacajbdvkho'  # 16 digit app password
+EMAIL_HOST_PASSWORD = env('ivjcmlmidjhsyooy')  # 16 digit app password
 
 # ─────────────────────────────────────────────
 #  REST FRAMEWORK
