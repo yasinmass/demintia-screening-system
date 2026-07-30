@@ -13,7 +13,7 @@ try:
 except ImportError:
     pass
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-healthcare-hack-secret-key-change-in-production')
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 't')
 
@@ -82,8 +82,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'healthcare.wsgi.application'
 
-DB_ENGINE = os.environ.get('DB_ENGINE', 'django.db.backends.mysql')
-DB_NAME = os.environ.get('DB_NAME', 'dementia_db')
+DB_ENGINE = os.environ.get('DB_ENGINE')
+DB_NAME = os.environ.get('DB_NAME')
 
 DATABASES = {
     'default': {
@@ -91,17 +91,14 @@ DATABASES = {
     }
 }
 
-if 'sqlite3' in DB_ENGINE:
-    DATABASES['default']['NAME'] = BASE_DIR / DB_NAME
-else:
-    DATABASES['default']['NAME'] = DB_NAME
-    DATABASES['default']['USER'] = os.environ.get('DB_USER', 'root')
-    DATABASES['default']['PASSWORD'] = os.environ.get('DB_PASSWORD', 'Vaishnav')
-    DATABASES['default']['HOST'] = os.environ.get('DB_HOST', '127.0.0.1')
-    DATABASES['default']['PORT'] = os.environ.get('DB_PORT', '3306')
-    DATABASES['default']['OPTIONS'] = {
-        'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-    }
+DATABASES['default']['NAME'] = DB_NAME
+DATABASES['default']['USER'] = os.environ.get('DB_USER', 'root')
+DATABASES['default']['PASSWORD'] = os.environ.get('DB_PASSWORD', '')
+DATABASES['default']['HOST'] = os.environ.get('DB_HOST', '127.0.0.1')
+DATABASES['default']['PORT'] = os.environ.get('DB_PORT', '3306')
+DATABASES['default']['OPTIONS'] = {
+    'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+}
 
 AUTH_PASSWORD_VALIDATORS = []
 
@@ -111,9 +108,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    BASE_DIR.parent,
-]
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -176,8 +171,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 't')
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'vaishnavanbalagan18@gmail.com')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'dcjyymacajbdvkho')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
 # ─────────────────────────────────────────────
 #  REST FRAMEWORK

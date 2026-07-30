@@ -8,10 +8,10 @@ import os
 import tempfile
 from django.conf import settings
 
-# Path to the model file (one level up from /backend/)
+
 MODEL_PATH = settings.BASE_DIR.parent / 'dementia_model (1).pkl'
 
-# Lazy-load model to avoid reloading on every request
+
 _model = None
 
 

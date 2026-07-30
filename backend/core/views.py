@@ -55,7 +55,6 @@ def signup_view(request):
     if User.objects.filter(email=email).exists():
         return error('An account with this email already exists.')
 
-    # 1. Create User
     user = User.objects.create_user(
         email=email,
         password=password,
@@ -72,6 +71,7 @@ def signup_view(request):
         age=age,
         dob=dob if dob else None,
         phone=phone,
+        password='',  # deprecated field; authentication uses user.password
     )
 
     # 3. Set Session
@@ -216,7 +216,7 @@ def doctor_signup_view(request):
     name = data.get('name', '').strip()
     email = data.get('email', '').strip().lower()
     password = data.get('password', '').strip()
-    specialization = data.get('specialization', 'Neurology').strip()
+    specialization = data.get('specialization', '').strip()
     license_number = data.get('license_number', '').strip()
     hospital = data.get('hospital', '').strip()
     phone = data.get('phone', '').strip()
@@ -245,6 +245,7 @@ def doctor_signup_view(request):
         license_number=license_number,
         hospital=hospital,
         phone=phone,
+        password='',  # deprecated field; authentication uses user.password
     )
 
     # 3. Set Session

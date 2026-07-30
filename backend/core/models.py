@@ -61,7 +61,7 @@ class Doctor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='doctor_profile', null=True, blank=True)
     name = models.CharField(max_length=200)
     email = models.EmailField(unique=True)
-    password = models.CharField(max_length=256)  # Deprecated in favor of user.password
+    password = models.CharField(max_length=256)  
     specialization = models.CharField(max_length=200, default='Neurology')
     license_number = models.CharField(max_length=100, blank=True)
     hospital = models.CharField(max_length=200, blank=True)
