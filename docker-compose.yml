@@ -2,7 +2,7 @@ services:
   mysql:
     image: mysql:8.0
     container_name: dementia-mysql
-    restart: always
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root123
       MYSQL_DATABASE: dementia_db
@@ -18,26 +18,38 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-    
-  frontend:
-    build: ./frontend
-    container_name: dementia-frontend
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-
   backend:
-    build: ./backend    
+    build: ./backend
     container_name: dementia-backend
-    restart: always
+    restart: unless-stopped
     depends_on:
-        mysql:
-          condition: service_healthy
+      mysql:
+        condition: service_healthy
     ports:
       - "8000:8000"
     env_file:
-      - ./backend/.env 
+      - ./backend/.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s 
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+
+    container_name: dementia-nginx
+    restart: unless-stopped
+
+    depends_on:
+      backend:
+        condition: service_healthy
+
+    ports:
+      - "9000:80"
 
 volumes:
   mysql_data:

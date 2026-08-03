@@ -12,6 +12,7 @@ from allauth.account.internal.flows.email_verification import send_verification_
 from django.core.mail import send_mail
 from .models import User, Patient, Assessment, Doctor, ClinicalPlan, MOCAAssessment, TaskCompletion, Notification
 from .ml_predictor import predict_dementia, combined_risk_level
+from django.http import JsonResponse
 
 
 
@@ -1339,3 +1340,7 @@ def complete_doctor_profile_view(request):
         return success({'message': 'Profile updated successfully.'})
     except Doctor.DoesNotExist:
         return error('Doctor not found.', 404)
+
+
+def health_check(request):
+    return JsonResponse({"status": "healthy"})

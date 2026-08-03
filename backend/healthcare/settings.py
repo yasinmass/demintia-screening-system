@@ -82,16 +82,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'healthcare.wsgi.application'
 
-DB_ENGINE = os.environ.get('DB_ENGINE')
-DB_NAME = os.environ.get('DB_NAME')
-
 DATABASES = {
     'default': {
-        'ENGINE': DB_ENGINE,
+        'ENGINE': os.environ.get('DB_ENGINE')
     }
 }
 
-DATABASES['default']['NAME'] = DB_NAME
+DATABASES['default']['NAME'] = os.environ.get('DB_NAME')
 DATABASES['default']['USER'] = os.environ.get('DB_USER', 'root')
 DATABASES['default']['PASSWORD'] = os.environ.get('DB_PASSWORD', '')
 DATABASES['default']['HOST'] = os.environ.get('DB_HOST', '127.0.0.1')

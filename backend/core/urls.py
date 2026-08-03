@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import health_check
 
 urlpatterns = [
     path('signup/', views.signup_view, name='signup'),
@@ -50,4 +51,6 @@ urlpatterns = [
 
     # Debug (remove in production)
     path('debug/plans/', views.debug_plans_view, name='debug_plans'),
+    path("health/", health_check),
 ]
+
