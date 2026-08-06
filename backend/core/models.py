@@ -1,11 +1,12 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin
+)
+
 from django.contrib.auth.hashers import make_password
 
-
-# ─────────────────────────────────────────────
-#  Custom User Model (required for allauth)
-# ─────────────────────────────────────────────
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -29,15 +30,18 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('patient', 'Patient'),
         ('doctor', 'Doctor'),
         ('admin', 'Admin'),
-        
     ]
+
     def get_full_name(self):
         return self.email
 
     def get_short_name(self):
         return self.email
     email = models.EmailField(unique=True)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='patient')
+    role = models.CharField(
+        max_length=10,
+        choices=ROLE_CHOICES,
+        default='patient')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_email_verified = models.BooleanField(default=False)
@@ -58,14 +62,28 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Doctor(models.Model):
     """Stores registered doctor information."""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='doctor_profile', null=True, blank=True)
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='doctor_profile',
+        null=True,
+        blank=True)
     name = models.CharField(max_length=200)
     email = models.EmailField(unique=True)
-    password = models.CharField(max_length=256)  
-    specialization = models.CharField(max_length=200, default='Neurology')
-    license_number = models.CharField(max_length=100, blank=True)
-    hospital = models.CharField(max_length=200, blank=True)
-    phone = models.CharField(max_length=20, null=True, blank=True)
+    password = models.CharField(max_length=256)
+    specialization = models.CharField(
+        max_length=200,
+        default='Neurology')
+    license_number = models.CharField(
+        max_length=100,
+        blank=True)
+    hospital = models.CharField(
+        max_length=200,
+        blank=True)
+    phone = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def set_password(self, raw_password):
@@ -86,14 +104,31 @@ class Doctor(models.Model):
 
 class Patient(models.Model):
     """Stores registered user/patient information."""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='patient_profile', null=True, blank=True)
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='patient_profile',
+        null=True,
+        blank=True)
     name = models.CharField(max_length=200)
     email = models.EmailField(unique=True)
-    password = models.CharField(max_length=256)  # Deprecated in favor of user.password
-    age = models.IntegerField(null=True, blank=True)
-    dob = models.DateField(null=True, blank=True)
-    phone = models.CharField(max_length=20, null=True, blank=True)
-    assigned_doctor = models.ForeignKey(Doctor, on_delete=models.SET_NULL, null=True, blank=True, related_name='patients')
+    password = models.CharField(max_length=256)
+    age = models.IntegerField(
+        null=True,
+        blank=True)
+    dob = models.DateField(
+        null=True,
+        blank=True)
+    phone = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True)
+    assigned_doctor = models.ForeignKey(
+        Doctor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='patients')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def set_password(self, raw_password):
@@ -127,7 +162,10 @@ class Assessment(models.Model):
         ('pending', 'Pending'),
     ]
 
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='assessments')
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name='assessments')
 
     # Cognitive quiz scores
     orientation_score = models.IntegerField(default=0)   # out of 10
@@ -145,16 +183,26 @@ class Assessment(models.Model):
     recording_duration = models.FloatField(default=0.0)
 
     # ML Model results
-    ml_prediction = models.CharField(max_length=10, choices=ML_CHOICES, default='pending')
+    ml_prediction = models.CharField(
+        max_length=10,
+        choices=ML_CHOICES,
+        default='pending')
     ml_dementia_probability = models.FloatField(default=0.0)
     ml_normal_probability = models.FloatField(default=0.0)
 
     # Final combined risk
-    risk_level = models.CharField(max_length=10, choices=RISK_CHOICES, default='Low')
+    risk_level = models.CharField(
+        max_length=10,
+        choices=RISK_CHOICES,
+        default='Low')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Assessment for {self.patient.name} — {self.risk_level} Risk | ML: {self.ml_prediction} ({self.created_at.strftime('%Y-%m-%d')})"
+        return (
+            f"Assessment for {self.patient.name} - {self.risk_level} Risk | "
+            f"ML: {self.ml_prediction} "
+            f"({self.created_at.strftime('%Y-%m-%d')})"
+        )
 
     class Meta:
         db_table = 'assessments'
@@ -170,38 +218,41 @@ class Assessment(models.Model):
 class MOCAAssessment(models.Model):
     """Stores Montreal Cognitive Assessment (MOCA) results — 30 marks total."""
 
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='moca_assessments')
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name='moca_assessments')
 
-    visuospatial_score   = models.IntegerField(default=0)
-    naming_score         = models.IntegerField(default=0)
-    memory_score         = models.IntegerField(default=0)
-    attention1_score     = models.IntegerField(default=0)
-    attention2_score     = models.IntegerField(default=0)
-    attention3_score     = models.IntegerField(default=0)
-    language_score       = models.IntegerField(default=0)
-    abstraction_score    = models.IntegerField(default=0)
-    orientation_score    = models.IntegerField(default=0)
+    visuospatial_score = models.IntegerField(default=0)
+    naming_score = models.IntegerField(default=0)
+    memory_score = models.IntegerField(default=0)
+    attention1_score = models.IntegerField(default=0)
+    attention2_score = models.IntegerField(default=0)
+    attention3_score = models.IntegerField(default=0)
+    language_score = models.IntegerField(default=0)
+    abstraction_score = models.IntegerField(default=0)
+    orientation_score = models.IntegerField(default=0)
     delayed_recall_score = models.IntegerField(default=0)
-    total_moca_score     = models.IntegerField(default=0)
-    answers_json         = models.JSONField(default=dict, blank=True)
-    created_at           = models.DateTimeField(auto_now_add=True)
+    total_moca_score = models.IntegerField(default=0)
+    answers_json = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"MOCA for {self.patient.name} — {self.total_moca_score}/30 ({self.created_at.strftime('%Y-%m-%d')})"
+        return (
+            f"MOCA for {self.patient.name} — "
+            f"{self.total_moca_score}/30 "
+            f"({self.created_at.strftime('%Y-%m-%d')})"
+        )
 
     class Meta:
-        db_table   = 'moca_assessments'
+        db_table = 'moca_assessments'
         verbose_name = 'MOCA Assessment'
         verbose_name_plural = 'MOCA Assessments'
-        ordering   = ['-created_at']
+        ordering = ['-created_at']
 
-
-# ─────────────────────────────────────────────
-#  Clinical Plan Model
-# ─────────────────────────────────────────────
 
 class ClinicalPlan(models.Model):
-    """Stores clinical plans assigned by doctors to patients."""
+
     PLAN_TYPES = [
         ('exercise', 'Exercise Schedule'),
         ('diet', 'Diet Chart'),
@@ -209,9 +260,18 @@ class ClinicalPlan(models.Model):
         ('prescription', 'Doctor Prescription'),
     ]
 
-    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='plans')
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='plans')
-    plan_type = models.CharField(max_length=20, choices=PLAN_TYPES, default='exercise')
+    doctor = models.ForeignKey(
+        Doctor,
+        on_delete=models.CASCADE,
+        related_name='plans')
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name='plans')
+    plan_type = models.CharField(
+        max_length=20,
+        choices=PLAN_TYPES,
+        default='exercise')
     content = models.JSONField(default=dict)
     special_instructions = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -233,8 +293,14 @@ class ClinicalPlan(models.Model):
 
 class TaskCompletion(models.Model):
     """Tracks when a patient completes an assigned clinical task/exercise."""
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='completions')
-    plan = models.ForeignKey(ClinicalPlan, on_delete=models.CASCADE, related_name='completions')
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name='completions')
+    plan = models.ForeignKey(
+        ClinicalPlan,
+        on_delete=models.CASCADE,
+        related_name='completions')
     task_id = models.CharField(max_length=100)
     completed_at = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True, null=True)
@@ -254,9 +320,14 @@ class TaskCompletion(models.Model):
 # ─────────────────────────────────────────────
 
 class Notification(models.Model):
-    """Tracks notifications sent to patients when clinical plans are assigned."""
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='notifications')
-    plan = models.ForeignKey(ClinicalPlan, on_delete=models.CASCADE, related_name='notifications')
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name='notifications')
+    plan = models.ForeignKey(
+        ClinicalPlan,
+        on_delete=models.CASCADE,
+        related_name='notifications')
     message = models.CharField(max_length=500)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

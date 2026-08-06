@@ -12,7 +12,6 @@ google-auth
 requests
 PyJWT
 
-# ML & Signal Processing
 numpy
 librosa
 joblib

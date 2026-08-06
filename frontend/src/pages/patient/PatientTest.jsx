@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { blobToWavBlob } from '../../utils/audioUtils';
 import { apiFetch } from '../../utils/api';
-import { t, getQuestions } from '../../utils/i18n';
+import { getQuestions } from '../../utils/i18n';
 import { getFinalOutput, startReactionTimer, stopReactionTimer, getAverageReactionTime, resetReactionTimer } from '../../utils/scoring';
 import MOCATest from './MOCATest';
 
@@ -324,8 +324,6 @@ function QuizPhase({ onDone }) {
         const scores = { orientation: counts.orientation * 2, memory: counts.memory * 2, executive: counts.executive * 2 };
         const finalResults = getFinalOutput(scores, avgRT);
         let voiceBio = {}; let mlRes = {};
-        try { voiceBio = JSON.parse(sessionStorage.getItem('voice_biomarkers') || '{}'); } catch { }
-        try { mlRes = JSON.parse(sessionStorage.getItem('ml_result') || '{}'); } catch { }
         const payload = { ...finalResults, ...voiceBio, ...mlRes };
 
         try {

@@ -1,6 +1,3 @@
-"""
-Django settings for HEALTHCARE_HACK project.
-"""
 import os
 from pathlib import Path
 
@@ -9,7 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Load environment variables from .env if present
 try:
     from dotenv import load_dotenv
-    load_dotenv(BASE_DIR / '.env')
+    load_dotenv(BASE_DIR/'.env')
 except ImportError:
     pass
 
@@ -21,8 +18,8 @@ ALLOWED_HOSTS = ['*']
 AUTH_USER_MODEL = 'core.User'
 LOGIN_REDIRECT_URL = 'http://localhost:3000/'
 ACCOUNT_LOGOUT_REDIRECT_URL = 'http://localhost:3000/login'
-ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = 'http://localhost:3000/login?verified=true'
-ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = 'http://localhost:3000/'
+EMAIL_CONFIRMATION_REDIRECT_URL = 'http://localhost:3000/login?verified=true'
+EMAIL_CONFIRMATION_REDIRECT_URL = 'http://localhost:3000/'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -167,7 +164,7 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 't')
+EMAIL_TLS = os.environ.get('EMAIL_TLS', 'True').lower() in ('true', '1', 't')
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
@@ -195,13 +192,3 @@ SOCIALACCOUNT_PROVIDERS = {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-

@@ -45,7 +45,7 @@ export default function PatientHome() {
                         if (planData.plans?.diet) setDietPlan(planData.plans.diet);
                         if (planData.plans?.task) setTaskPlan(planData.plans.task);
                     }
-                } catch (_) { }
+                } catch{ }
             } catch (err) {
                 console.error("Failed to load patient data:", err);
             } finally {

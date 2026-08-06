@@ -1,19 +1,31 @@
 import json
 import os
-import tempfile
 import re
+import tempfile
+
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token
 from pypdf import PdfReader
-from django.utils import timezone
+
+from django.contrib.auth import authenticate
+from django.contrib.auth import login as auth_login
+from django.core.mail import send_mail
 from django.http import JsonResponse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.contrib.auth import authenticate, login as auth_login
-from allauth.account.internal.flows.email_verification import send_verification_email_for_user
-from django.core.mail import send_mail
-from .models import User, Patient, Assessment, Doctor, ClinicalPlan, MOCAAssessment, TaskCompletion, Notification
-from .ml_predictor import predict_dementia, combined_risk_level
-from django.http import JsonResponse
 
+from .ml_predictor import combined_risk_level, predict_dementia
+from .models import (
+    Assessment,
+    ClinicalPlan,
+    Doctor,
+    MOCAAssessment,
+    Notification,
+    Patient,
+    TaskCompletion,
+    User,
+)
 
 
 def json_body(request):
@@ -25,7 +37,9 @@ def json_body(request):
 
 
 def error(msg, status=400):
-    return JsonResponse({'success': False, 'error': msg}, status=status)
+    return JsonResponse(
+        {'success': False, 'error': msg}, status=status
+    )
 
 
 def success(data=None, status=200):
@@ -34,8 +48,6 @@ def success(data=None, status=200):
         payload.update(data)
     return JsonResponse(payload, status=status)
 
-
-# ─── Patient Auth Views ──────────────────────────────────────────────────────
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -49,7 +61,6 @@ def signup_view(request):
     age = data.get('age')
     dob = data.get('dob')
     phone = data.get('phone', '').strip()
-
     if not all([name, email, password]):
         return error('Name, email, and password are required.')
 
@@ -84,7 +95,13 @@ def signup_view(request):
     # 4. Send welcome email
     try:
         subject = "Welcome to NeuroScan AI!"
-        email_body = f"Dear {patient.name},\nWelcome to NeuroScan AI - Dementia Screening Platform.\nYour account has been created successfully.\nLogin: http://localhost:3000/login/patient\n- NeuroScan AI Team"
+        email_body = (
+            f"Dear {patient.name},\n"
+            "Welcome to NeuroScan AI - Dementia Screening Platform.\n"
+            "Your account has been created successfully.\n"
+            "Login: http://localhost:3000/login/patient\n"
+            "- NeuroScan AI Team"
+        )
         send_mail(
             subject,
             email_body,
@@ -96,7 +113,11 @@ def signup_view(request):
         print(f"Email failed: {e}")
 
     return success({
-        'patient': {'id': patient.id, 'name': patient.name, 'email': patient.email}
+        'patient': {
+            'id': patient.id,
+            'name': patient.name,
+            'email': patient.email,
+        }
     })
 
 
@@ -112,15 +133,17 @@ def login_view(request):
         return error('Email and password are required.')
 
     user = authenticate(request, username=email, password=password)
-    
+
     if user is None:
         return error('Invalid email or password.', 401)
-    
+
     if not user.is_active:
-        return error('Please verify your email address before logging in.', 401)
+        return error(
+            'Please verify your email address before logging in.', 401
+        )
 
     auth_login(request, user)
-    
+
     try:
         patient = user.patient_profile
     except Patient.DoesNotExist:
@@ -132,7 +155,11 @@ def login_view(request):
     request.session['role'] = 'patient'
 
     return success({
-        'patient': {'id': patient.id, 'name': patient.name, 'email': patient.email}
+        'patient': {
+            'id': patient.id,
+            'name': patient.name,
+            'email': patient.email,
+        }
     })
 
 
@@ -157,10 +184,10 @@ def associate_doctor_view(request):
     patient_id = request.session.get('patient_id')
     if not patient_id:
         return error('Authentication required.', 401)
-    
+
     data = json_body(request)
     doctor_id = data.get('doctor_id')
-    
+
     try:
         patient = Patient.objects.get(id=patient_id)
         if doctor_id:
@@ -194,10 +221,16 @@ def me_view(request):
         doctor = patient.assigned_doctor
         return success({
             'patient': {
-                'id': patient.id, 'name': patient.name, 'email': patient.email,
-                'age': patient.age, 'phone': patient.phone, 'role': 'patient',
+                'id': patient.id,
+                'name': patient.name,
+                'email': patient.email,
+                'age': patient.age,
+                'phone': patient.phone,
+                'role': 'patient',
                 'assigned_doctor': {
-                    'id': doctor.id, 'name': doctor.name, 'hospital': doctor.hospital
+                    'id': doctor.id,
+                    'name': doctor.name,
+                    'hospital': doctor.hospital,
                 } if doctor else None
             }
         })
@@ -206,7 +239,7 @@ def me_view(request):
         return error('Patient not found.', 401)
 
 
-# ─── Doctor Auth Views ────────────────────────────────────────────────────────
+# ─── Doctor Auth Views ─────────────────────────────────────────────────
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -258,7 +291,13 @@ def doctor_signup_view(request):
     # 4. Send welcome email
     try:
         subject = "Welcome to NeuroScan AI!"
-        email_body = f"Dear Dr. {doctor.name},\nWelcome to NeuroScan AI - Dementia Screening Platform.\nYour professional account has been created successfully.\nLogin: http://localhost:3000/login/doctor\n- NeuroScan AI Team"
+        email_body = (
+            f"Dear Dr. {doctor.name},\n"
+            "Welcome to NeuroScan AI - Dementia Screening Platform.\n"
+            "Your professional account has been created successfully.\n"
+            "Login: http://localhost:3000/login/doctor\n"
+            "- NeuroScan AI Team"
+        )
         send_mail(
             subject,
             email_body,
@@ -271,8 +310,11 @@ def doctor_signup_view(request):
 
     return success({
         'doctor': {
-            'id': doctor.id, 'name': doctor.name, 'email': doctor.email,
-            'specialization': doctor.specialization, 'hospital': doctor.hospital
+            'id': doctor.id,
+            'name': doctor.name,
+            'email': doctor.email,
+            'specialization': doctor.specialization,
+            'hospital': doctor.hospital,
         }
     })
 
@@ -289,15 +331,17 @@ def doctor_login_view(request):
         return error('Email and password are required.')
 
     user = authenticate(request, username=email, password=password)
-    
+
     if user is None:
         return error('Invalid email or password.', 401)
-    
+
     if not user.is_active:
-        return error('Please verify your email address before logging in.', 401)
+        return error(
+            'Please verify your email address before logging in.', 401
+        )
 
     auth_login(request, user)
-    
+
     try:
         doctor = user.doctor_profile
     except Doctor.DoesNotExist:
@@ -310,8 +354,11 @@ def doctor_login_view(request):
 
     return success({
         'doctor': {
-            'id': doctor.id, 'name': doctor.name, 'email': doctor.email,
-            'specialization': doctor.specialization, 'hospital': doctor.hospital
+            'id': doctor.id,
+            'name': doctor.name,
+            'email': doctor.email,
+            'specialization': doctor.specialization,
+            'hospital': doctor.hospital,
         }
     })
 
@@ -327,10 +374,14 @@ def doctor_me_view(request):
         doctor = Doctor.objects.get(id=doctor_id)
         return success({
             'doctor': {
-                'id': doctor.id, 'name': doctor.name, 'email': doctor.email,
-                'specialization': doctor.specialization, 'hospital': doctor.hospital,
-                'license_number': doctor.license_number, 'phone': doctor.phone,
-                'role': 'doctor'
+                'id': doctor.id,
+                'name': doctor.name,
+                'email': doctor.email,
+                'specialization': doctor.specialization,
+                'hospital': doctor.hospital,
+                'license_number': doctor.license_number,
+                'phone': doctor.phone,
+                'role': 'doctor',
             }
         })
     except Doctor.DoesNotExist:
@@ -338,7 +389,7 @@ def doctor_me_view(request):
         return error('Doctor not found.', 401)
 
 
-# ─── Doctor Dashboard API Views ───────────────────────────────────────────────
+# ─── Doctor Dashboard API Views ────────────────────────────────────────
 
 @require_http_methods(["GET"])
 def doctor_stats_view(request):
@@ -348,10 +399,17 @@ def doctor_stats_view(request):
         return error('Not authenticated as doctor.', 401)
 
     # Filter by patients who have specifically 'added' this doctor
-    assigned_patients = Patient.objects.filter(assigned_doctor_id=doctor_id)
+    assigned_patients = Patient.objects.filter(
+        assigned_doctor_id=doctor_id
+    )
     total_patients = assigned_patients.count()
-    
-    all_assessments = Assessment.objects.filter(patient__in=assigned_patients).select_related('patient').order_by('-created_at')
+
+    all_assessments = (
+        Assessment.objects
+        .filter(patient__in=assigned_patients)
+        .select_related('patient')
+        .order_by('-created_at')
+    )
 
     # Latest assessment per assigned patient
     seen = set()
@@ -361,9 +419,15 @@ def doctor_stats_view(request):
             seen.add(a.patient_id)
             latest_per_patient.append(a)
 
-    high_risk = sum(1 for a in latest_per_patient if a.risk_level == 'High')
-    moderate_risk = sum(1 for a in latest_per_patient if a.risk_level == 'Moderate')
-    low_risk = sum(1 for a in latest_per_patient if a.risk_level == 'Low')
+    high_risk = sum(
+        1 for a in latest_per_patient if a.risk_level == 'High'
+    )
+    moderate_risk = sum(
+        1 for a in latest_per_patient if a.risk_level == 'Moderate'
+    )
+    low_risk = sum(
+        1 for a in latest_per_patient if a.risk_level == 'Low'
+    )
     total_assessments = all_assessments.count()
 
     return success({
@@ -373,19 +437,23 @@ def doctor_stats_view(request):
             'moderate_risk': moderate_risk,
             'low_risk': low_risk,
             'total_assessments': total_assessments,
-            'pending_reports': max(0, total_patients - len(latest_per_patient)),
+            'pending_reports': max(
+                0, total_patients - len(latest_per_patient)
+            ),
         }
     })
 
 
 @require_http_methods(["GET"])
 def doctor_patients_view(request):
-    """Get only assigned patients with their latest assessment for the doctor."""
+    """Get only assigned patients with their latest assessment."""
     doctor_id = request.session.get('doctor_id')
     if not doctor_id:
         return error('Not authenticated as doctor.', 401)
 
-    patients = Patient.objects.filter(assigned_doctor_id=doctor_id).order_by('-created_at')
+    patients = Patient.objects.filter(
+        assigned_doctor_id=doctor_id
+    ).order_by('-created_at')
     result = []
     for p in patients:
         latest = Assessment.objects.filter(patient=p).first()
@@ -401,9 +469,13 @@ def doctor_patients_view(request):
                 'risk_level': latest.risk_level,
                 'total_score': latest.total_score,
                 'ml_prediction': latest.ml_prediction,
-                'created_at': latest.created_at.strftime('%Y-%m-%d %H:%M'),
+                'created_at': latest.created_at.strftime(
+                    '%Y-%m-%d %H:%M'
+                ),
             } if latest else None,
-            'total_assessments': Assessment.objects.filter(patient=p).count(),
+            'total_assessments': Assessment.objects.filter(
+                patient=p
+            ).count(),
         })
 
     return success({'patients': result})
@@ -444,7 +516,9 @@ def doctor_patient_detail_view(request, patient_id):
     ]
 
     # Fetch MOCA history
-    mocas = MOCAAssessment.objects.filter(patient=patient).order_by('-created_at')
+    mocas = MOCAAssessment.objects.filter(
+        patient=patient
+    ).order_by('-created_at')
     moca_data = [
         {
             'id': m.id,
@@ -454,18 +528,27 @@ def doctor_patient_detail_view(request, patient_id):
     ]
 
     # Fetch clinical adherence record
-    completions = TaskCompletion.objects.filter(patient=patient).select_related('plan').order_by('-completed_at')[:20]
-    
+    completions = (
+        TaskCompletion.objects
+        .filter(patient=patient)
+        .select_related('plan')
+        .order_by('-completed_at')[:20]
+    )
+
     # Simple adherence calculation (e.g., last 7 days vs expected)
-    exercise_plan = ClinicalPlan.objects.filter(patient=patient, plan_type='exercise').first()
+    exercise_plan = ClinicalPlan.objects.filter(
+        patient=patient, plan_type='exercise'
+    ).first()
     expected_per_week = 0
     if exercise_plan and isinstance(exercise_plan.content, dict):
         for day_tasks in exercise_plan.content.values():
-            if isinstance(day_tasks, list): 
+            if isinstance(day_tasks, list):
                 expected_per_week += len(day_tasks)
-    
-    recent_done = TaskCompletion.objects.filter(patient=patient, plan__plan_type='exercise').count()
-    
+
+    recent_done = TaskCompletion.objects.filter(
+        patient=patient, plan__plan_type='exercise'
+    ).count()
+
     return success({
         'patient': {
             'id': patient.id,
@@ -493,7 +576,7 @@ def doctor_patient_detail_view(request, patient_id):
     })
 
 
-# ─── Audio / ML Analysis View ─────────────────────────────────────────────────
+# ─── Audio / ML Analysis View ──────────────────────────────────────────
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -514,7 +597,9 @@ def analyze_audio_view(request):
     suffix = '.wav' if audio_file.name.endswith('.wav') else '.webm'
     tmp_path = None
     try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        with tempfile.NamedTemporaryFile(
+            delete=False, suffix=suffix
+        ) as tmp:
             for chunk in audio_file.chunks():
                 tmp.write(chunk)
             tmp_path = tmp.name
@@ -536,7 +621,7 @@ def analyze_audio_view(request):
             os.unlink(tmp_path)
 
 
-# ─── Assessment Views ─────────────────────────────────────────────────────────
+# ─── Assessment Views ───────────────────────────────────────────────────
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -557,7 +642,7 @@ def save_assessment_view(request):
     data = json_body(request)
 
     total_score = data.get('total_score', 0)
-    ml_pred     = data.get('ml_prediction', 'pending')
+    ml_pred = data.get('ml_prediction', 'pending')
     ml_dem_prob = data.get('ml_dementia_probability', 0.0)
 
     # Calculate combined risk level using ML + quiz
@@ -603,7 +688,9 @@ def latest_assessment_view(request):
     if not patient_id:
         return error('Not authenticated.', 401)
 
-    assessment = Assessment.objects.filter(patient_id=patient_id).first()
+    assessment = Assessment.objects.filter(
+        patient_id=patient_id
+    ).first()
     if not assessment:
         return error('No assessment found.', 404)
 
@@ -623,7 +710,9 @@ def latest_assessment_view(request):
             'ml_dementia_probability': assessment.ml_dementia_probability,
             'ml_normal_probability': assessment.ml_normal_probability,
             'final_risk_level': assessment.risk_level,
-            'created_at': assessment.created_at.strftime('%Y-%m-%d %H:%M'),
+            'created_at': assessment.created_at.strftime(
+                '%Y-%m-%d %H:%M'
+            ),
         }
     })
 
@@ -653,11 +742,11 @@ def all_assessments_view(request):
     return success({'assessments': data})
 
 
-# ─── Debug / Utility View ────────────────────────────────────────────────────
+# ─── Debug / Utility View ───────────────────────────────────────────────
 
 @require_http_methods(["GET"])
 def debug_plans_view(request):
-    """Debug: Return all clinical plans and session info (remove in production)."""
+    """Debug: Return all clinical plans and session info."""
     session_data = {
         'role': request.session.get('role'),
         'patient_id': request.session.get('patient_id'),
@@ -665,7 +754,9 @@ def debug_plans_view(request):
         'patient_name': request.session.get('patient_name'),
         'doctor_name': request.session.get('doctor_name'),
     }
-    all_plans = ClinicalPlan.objects.all().select_related('patient', 'doctor')
+    all_plans = ClinicalPlan.objects.all().select_related(
+        'patient', 'doctor'
+    )
     plans_data = [{
         'id': p.id,
         'plan_type': p.plan_type,
@@ -673,7 +764,11 @@ def debug_plans_view(request):
         'patient_name': p.patient.name,
         'doctor_id': p.doctor_id,
         'doctor_name': p.doctor.name,
-        'content_keys': list(p.content.keys()) if isinstance(p.content, dict) else str(type(p.content)),
+        'content_keys': (
+            list(p.content.keys())
+            if isinstance(p.content, dict)
+            else str(type(p.content))
+        ),
         'has_content': bool(p.content),
         'created_at': p.created_at.strftime('%Y-%m-%d %H:%M'),
     } for p in all_plans]
@@ -683,7 +778,9 @@ def debug_plans_view(request):
         'id': p.id,
         'name': p.name,
         'email': p.email,
-        'assigned_doctor': p.assigned_doctor.name if p.assigned_doctor else None,
+        'assigned_doctor': (
+            p.assigned_doctor.name if p.assigned_doctor else None
+        ),
         'assigned_doctor_id': p.assigned_doctor_id,
     } for p in all_patients]
 
@@ -695,7 +792,7 @@ def debug_plans_view(request):
     })
 
 
-# ─── Clinical Planning & Tasks ───────────────────────────────────────────────
+# ─── Clinical Planning & Tasks ──────────────────────────────────────────
 
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
@@ -708,7 +805,9 @@ def clinical_plans_view(request):
     my_doctor_id = request.session.get('doctor_id')
 
     if not role:
-        return error('Authentication required to access clinical assignments.', 401)
+        return error(
+            'Authentication required to access clinical assignments.', 401
+        )
 
     if request.method == "GET":
         if role == 'doctor':
@@ -717,7 +816,7 @@ def clinical_plans_view(request):
             query = ClinicalPlan.objects.filter(doctor_id=my_doctor_id)
             if p_id:
                 query = query.filter(patient_id=p_id)
-            
+
             return success({
                 'plans': [{
                     'id': p.id,
@@ -736,7 +835,10 @@ def clinical_plans_view(request):
             today = timezone.now().date()
             for t in types:
                 # Optimized: Get the most recent plan of this type
-                p = ClinicalPlan.objects.filter(patient_id=my_patient_id, plan_type=t).order_by('-created_at').first()
+                p = ClinicalPlan.objects.filter(
+                    patient_id=my_patient_id,
+                    plan_type=t
+                ).order_by('-created_at').first()
                 if p:
                     # Get completions for this plan TODAY
                     completions = TaskCompletion.objects.filter(
@@ -755,11 +857,13 @@ def clinical_plans_view(request):
                     }
             return success({'plans': result})
 
-
     elif request.method == "POST":
         if role != 'doctor':
-            return error('Only medical professionals can assign clinical plans.', 403)
-        
+            return error(
+                'Only medical professionals can assign clinical plans.',
+                403
+            )
+
         data = json_body(request)
         patient_id = data.get('patient_id')
         plan_type = data.get('plan_type', 'exercise')
@@ -767,7 +871,9 @@ def clinical_plans_view(request):
         special_instructions = data.get('special_instructions', '')
 
         if not patient_id:
-            return error('Target patient ID is required for clinical assignment.')
+            return error(
+                'Target patient ID is required for clinical assignment.'
+            )
 
         # Update if exists or create new
         plan, created = ClinicalPlan.objects.update_or_create(
@@ -783,21 +889,34 @@ def clinical_plans_view(request):
         # Trigger Notification and Email
         doctor = plan.doctor
         patient = plan.patient
-        plan_type_label = dict(ClinicalPlan.PLAN_TYPES).get(plan_type, plan_type)
-        
+        plan_type_label = dict(ClinicalPlan.PLAN_TYPES).get(
+            plan_type, plan_type
+        )
+
         message = f"Dr. {doctor.name} assigned you a new {plan_type_label}"
-        
+
         # 1. Create Notification Record
         Notification.objects.create(
             patient=patient,
             plan=plan,
             message=message
         )
-        
+
         # 2. Send Email Notification
         try:
-            subject = f"New {plan_type_label} assigned by Dr. {doctor.name} - NeuroScan AI"
-            email_body = f"Dear {patient.name},\n\nYour doctor Dr. {doctor.name} has assigned you a new {plan_type_label}.\n\nSpecial Instructions: {special_instructions}\n\nPlease login to your portal to view details.\nLink: http://localhost:3000/patient\n\n- NeuroScan AI Team\n"
+            subject = (
+                f"New {plan_type_label} assigned by Dr. {doctor.name}"
+                " - NeuroScan AI"
+            )
+            email_body = (
+                f"Dear {patient.name},\n\n"
+                f"Your doctor Dr. {doctor.name} has assigned you a new"
+                f" {plan_type_label}.\n\n"
+                f"Special Instructions: {special_instructions}\n\n"
+                "Please login to your portal to view details.\n"
+                "Link: http://localhost:3000/patient\n\n"
+                "- NeuroScan AI Team\n"
+            )
             send_mail(
                 subject,
                 email_body,
@@ -815,7 +934,7 @@ def clinical_plans_view(request):
         }, status=201)
 
 
-# ─── Notification Views ───────────────────────────────────────────────────────
+# ─── Notification Views ─────────────────────────────────────────────────
 
 @require_http_methods(["GET"])
 def notifications_list_view(request):
@@ -823,8 +942,13 @@ def notifications_list_view(request):
     patient_id = request.session.get('patient_id')
     if not patient_id:
         return error('Not authenticated.', 401)
-    
-    notifications = Notification.objects.filter(patient_id=patient_id).select_related('plan', 'plan__doctor').order_by('-created_at')
+
+    notifications = (
+        Notification.objects
+        .filter(patient_id=patient_id)
+        .select_related('plan', 'plan__doctor')
+        .order_by('-created_at')
+    )
     data = [
         {
             'id': n.id,
@@ -839,6 +963,7 @@ def notifications_list_view(request):
     ]
     return success({'notifications': data})
 
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def mark_notification_read_view(request):
@@ -846,17 +971,20 @@ def mark_notification_read_view(request):
     patient_id = request.session.get('patient_id')
     if not patient_id:
         return error('Not authenticated.', 401)
-    
+
     data = json_body(request)
     notif_id = data.get('notification_id')
-    
+
     try:
-        notification = Notification.objects.get(id=notif_id, patient_id=patient_id)
+        notification = Notification.objects.get(
+            id=notif_id, patient_id=patient_id
+        )
         notification.is_read = True
         notification.save()
         return success({'message': 'Notification marked as read.'})
     except Notification.DoesNotExist:
         return error('Notification not found.', 404)
+
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -865,9 +993,12 @@ def mark_all_notifications_read_view(request):
     patient_id = request.session.get('patient_id')
     if not patient_id:
         return error('Not authenticated.', 401)
-    
-    Notification.objects.filter(patient_id=patient_id, is_read=False).update(is_read=True)
+
+    Notification.objects.filter(
+        patient_id=patient_id, is_read=False
+    ).update(is_read=True)
     return success({'message': 'All notifications marked as read.'})
+
 
 @require_http_methods(["GET"])
 def unread_count_view(request):
@@ -875,12 +1006,14 @@ def unread_count_view(request):
     patient_id = request.session.get('patient_id')
     if not patient_id:
         return error('Not authenticated.', 401)
-    
-    count = Notification.objects.filter(patient_id=patient_id, is_read=False).count()
+
+    count = Notification.objects.filter(
+        patient_id=patient_id, is_read=False
+    ).count()
     return success({'count': count})
 
 
-# ─── MOCA Assessment Views ────────────────────────────────────────────────────
+# ─── MOCA Assessment Views ──────────────────────────────────────────────
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -900,40 +1033,44 @@ def save_moca_view(request):
 
     data = json_body(request)
 
-    visuospatial   = int(round(float(data.get('visuospatial_score',   0))))
-    naming         = int(round(float(data.get('naming_score',         0))))
-    memory         = int(round(float(data.get('memory_score',         0))))
-    attention1     = int(round(float(data.get('attention1_score',     0))))
-    attention2     = int(round(float(data.get('attention2_score',     0))))
-    attention3     = int(round(float(data.get('attention3_score',     0))))
-    language       = int(round(float(data.get('language_score',       0))))
-    abstraction    = int(round(float(data.get('abstraction_score',    0))))
-    orientation    = int(round(float(data.get('orientation_score',    0))))
-    delayed_recall = int(round(float(data.get('delayed_recall_score', 0))))
+    visuospatial = int(round(float(data.get('visuospatial_score', 0))))
+    naming = int(round(float(data.get('naming_score', 0))))
+    memory = int(round(float(data.get('memory_score', 0))))
+    attention1 = int(round(float(data.get('attention1_score', 0))))
+    attention2 = int(round(float(data.get('attention2_score', 0))))
+    attention3 = int(round(float(data.get('attention3_score', 0))))
+    language = int(round(float(data.get('language_score', 0))))
+    abstraction = int(round(float(data.get('abstraction_score', 0))))
+    orientation = int(round(float(data.get('orientation_score', 0))))
+    delayed_recall = int(
+        round(float(data.get('delayed_recall_score', 0)))
+    )
 
-    total = sum([visuospatial, naming, memory, attention1, attention2,
-                 attention3, language, abstraction, orientation, delayed_recall])
+    total = sum([
+        visuospatial, naming, memory, attention1, attention2,
+        attention3, language, abstraction, orientation, delayed_recall
+    ])
 
     moca = MOCAAssessment.objects.create(
-        patient          = patient,
-        visuospatial_score   = visuospatial,
-        naming_score         = naming,
-        memory_score         = memory,
-        attention1_score     = attention1,
-        attention2_score     = attention2,
-        attention3_score     = attention3,
-        language_score       = language,
-        abstraction_score    = abstraction,
-        orientation_score    = orientation,
-        delayed_recall_score = delayed_recall,
-        total_moca_score     = total,
-        answers_json         = data.get('answers_json', {}),
+        patient=patient,
+        visuospatial_score=visuospatial,
+        naming_score=naming,
+        memory_score=memory,
+        attention1_score=attention1,
+        attention2_score=attention2,
+        attention3_score=attention3,
+        language_score=language,
+        abstraction_score=abstraction,
+        orientation_score=orientation,
+        delayed_recall_score=delayed_recall,
+        total_moca_score=total,
+        answers_json=data.get('answers_json', {}),
     )
 
     return success({
-        'moca_id':          moca.id,
+        'moca_id': moca.id,
         'total_moca_score': moca.total_moca_score,
-        'message':          'MOCA assessment saved successfully.'
+        'message': 'MOCA assessment saved successfully.'
     }, status=201)
 
 
@@ -950,19 +1087,19 @@ def latest_moca_view(request):
 
     return success({
         'moca': {
-            'id':                    moca.id,
-            'visuospatial_score':    moca.visuospatial_score,
-            'naming_score':          moca.naming_score,
-            'memory_score':          moca.memory_score,
-            'attention1_score':      moca.attention1_score,
-            'attention2_score':      moca.attention2_score,
-            'attention3_score':      moca.attention3_score,
-            'language_score':        moca.language_score,
-            'abstraction_score':     moca.abstraction_score,
-            'orientation_score':     moca.orientation_score,
-            'delayed_recall_score':  moca.delayed_recall_score,
-            'total_moca_score':      moca.total_moca_score,
-            'created_at':            moca.created_at.strftime('%Y-%m-%d %H:%M'),
+            'id': moca.id,
+            'visuospatial_score': moca.visuospatial_score,
+            'naming_score': moca.naming_score,
+            'memory_score': moca.memory_score,
+            'attention1_score': moca.attention1_score,
+            'attention2_score': moca.attention2_score,
+            'attention3_score': moca.attention3_score,
+            'language_score': moca.language_score,
+            'abstraction_score': moca.abstraction_score,
+            'orientation_score': moca.orientation_score,
+            'delayed_recall_score': moca.delayed_recall_score,
+            'total_moca_score': moca.total_moca_score,
+            'created_at': moca.created_at.strftime('%Y-%m-%d %H:%M'),
         }
     })
 
@@ -977,42 +1114,49 @@ def moca_history_view(request):
     mocas = MOCAAssessment.objects.filter(patient_id=patient_id)
     data = [
         {
-            'id':               m.id,
+            'id': m.id,
             'total_moca_score': m.total_moca_score,
-            'created_at':       m.created_at.strftime('%Y-%m-%d %H:%M'),
+            'created_at': m.created_at.strftime('%Y-%m-%d %H:%M'),
         }
         for m in mocas
     ]
     return success({'moca_assessments': data})
 
 
-# ─── Clinical Monitoring & Adherence ──────────────────────────────────────────
+# ─── Clinical Monitoring & Adherence ─────────────────────────────────────────
 
 @csrf_exempt
 @require_http_methods(["POST"])
 def doctor_associate_patient_view(request):
-    """Allow doctor to add a patient to their clinical list via account email."""
+    """Allow doctor to add a patient to their clinical list via email."""
     doctor_id = request.session.get('doctor_id')
     if not doctor_id:
         return error('Not authenticated as doctor.', 401)
-    
+
     data = json_body(request)
     email = data.get('email', '').strip().lower()
-    
+
     if not email:
         return error('Patient email is required.')
-    
+
     try:
         doctor = Doctor.objects.get(id=doctor_id)
         patient = Patient.objects.get(email=email)
-        
+
         # Link the patient to this doctor
         patient.assigned_doctor = doctor
         patient.save()
-        
-        return success({'message': f'Patient {patient.name} successfully added to clinical registry.'})
+
+        return success({
+            'message': (
+                f'Patient {patient.name} successfully added'
+                ' to clinical registry.'
+            )
+        })
     except Patient.DoesNotExist:
-        return error('No patient account found with this email address.')
+        return error(
+            'No patient account found with this email address.'
+        )
     except Exception as e:
         return error(str(e))
 
@@ -1024,18 +1168,20 @@ def mark_task_complete_view(request):
     patient_id = request.session.get('patient_id')
     if not patient_id:
         return error('Not authenticated.', 401)
-    
+
     data = json_body(request)
     plan_id = data.get('plan_id')
-    task_id = data.get('task_id') # Mon, ex1 etc
+    task_id = data.get('task_id')  # Mon, ex1 etc
     notes = data.get('notes', '')
-    
+
     if not plan_id or not task_id:
-        return error('Clinical plan and specific task identifier are required.')
-    
+        return error(
+            'Clinical plan and specific task identifier are required.'
+        )
+
     try:
         plan = ClinicalPlan.objects.get(id=plan_id, patient_id=patient_id)
-        
+
         # Create completion record
         TaskCompletion.objects.create(
             patient_id=patient_id,
@@ -1054,38 +1200,54 @@ def doctor_completions_view(request):
     doctor_id = request.session.get('doctor_id')
     if not doctor_id:
         return error('Not authenticated as doctor.', 401)
-    
+
     # Get patients for this doctor
-    assigned_patients = Patient.objects.filter(assigned_doctor_id=doctor_id)
-    
+    assigned_patients = Patient.objects.filter(
+        assigned_doctor_id=doctor_id
+    )
+
     # Get recent completions (last 50)
-    completions = TaskCompletion.objects.filter(plan__doctor_id=doctor_id).select_related('patient', 'plan').order_by('-completed_at')[:50]
-    
+    completions = (
+        TaskCompletion.objects
+        .filter(plan__doctor_id=doctor_id)
+        .select_related('patient', 'plan')
+        .order_by('-completed_at')[:50]
+    )
+
     # Calculate summary per patient
     patient_summary = []
     # Pre-fetch latest assessment for each patient efficiently
     latest_assessments = {}
-    for a in Assessment.objects.filter(patient__in=assigned_patients).order_by('patient_id', '-created_at'):
+    for a in Assessment.objects.filter(
+        patient__in=assigned_patients
+    ).order_by('patient_id', '-created_at'):
         if a.patient_id not in latest_assessments:
             latest_assessments[a.patient_id] = a
 
     for p in assigned_patients:
         assessment = latest_assessments.get(p.id)
         risk = assessment.risk_level if assessment else 'Unknown'
-        
+
         # Count assigned tasks (approximate from JSON content)
-        plan = ClinicalPlan.objects.filter(patient=p, plan_type='exercise').first()
+        plan = ClinicalPlan.objects.filter(
+            patient=p, plan_type='exercise'
+        ).first()
         assigned_count = 0
         if plan and isinstance(plan.content, dict):
             for day_tasks in plan.content.values():
                 if isinstance(day_tasks, list):
                     assigned_count += len(day_tasks)
-        
+
         # Count completions this week
-        done_count = TaskCompletion.objects.filter(patient=p, plan__plan_type='exercise').count()
-        
-        pct = min(100, int((done_count / assigned_count) * 100)) if assigned_count > 0 else 0
-        
+        done_count = TaskCompletion.objects.filter(
+            patient=p, plan__plan_type='exercise'
+        ).count()
+
+        pct = (
+            min(100, int((done_count / assigned_count) * 100))
+            if assigned_count > 0 else 0
+        )
+
         patient_summary.append({
             'name': p.name,
             'risk': risk,
@@ -1097,52 +1259,67 @@ def doctor_completions_view(request):
     return success({
         'completions': [{
             'patient': c.patient.name,
-            'risk': latest_assessments.get(c.patient_id).risk_level if latest_assessments.get(c.patient_id) else 'Low',
+            'risk': (
+                latest_assessments.get(c.patient_id).risk_level
+                if latest_assessments.get(c.patient_id) else 'Low'
+            ),
             'exercise': c.task_id,
             'completedAt': c.completed_at.strftime('%Y-%m-%d %H:%M')
         } for c in completions],
         'patient_summary': patient_summary
     })
+
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def doctor_extract_patient_view(request):
     """
-    Accepts a PDF clinical report, extracts the patient email from the 
+    Accepts a PDF clinical report, extracts the patient email from the
     identification block, and associates the patient with the doctor.
     """
     doctor_id = request.session.get('doctor_id')
     if not doctor_id:
         return error('Access denied. Doctor authentication required.', 403)
-        
+
     pdf_file = request.FILES.get('report')
     if not pdf_file:
         return error('No clinical report PDF provided.')
-        
+
     try:
         reader = PdfReader(pdf_file)
         full_text = ""
         for page in reader.pages:
             full_text += page.extract_text() + "\n"
-            
+
         # Regex for the system registry email we added to the report
-        match = re.search(r"System Registry Email\s+([A-Za-z0-9._%+-]+@([A-Za-z0-9.-]+\.[A-Z|a-z]{2,}))", full_text)
-        
+        match = re.search(
+            r"System Registry Email\s+"
+            r"([A-Za-z0-9._%+-]+@([A-Za-z0-9.-]+\.[A-Z|a-z]{2,}))",
+            full_text
+        )
+
         if not match:
-            # Broader search for any email if the specific label isn't caught perfectly
-            match = re.search(r"([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})", full_text)
-            
+            # Broader search for any email if the specific label isn't found
+            match = re.search(
+                r"([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})",
+                full_text
+            )
+
         if not match:
-            return error("Could not find valid clinical registry credentials in this PDF.")
-            
+            return error(
+                "Could not find valid clinical registry credentials"
+                " in this PDF."
+            )
+
         email = match.group(0).strip().lower()
-        
+
         doctor = Doctor.objects.get(id=doctor_id)
         patient = Patient.objects.get(email=email)
-        
+
         # Link the patient to this doctor
         patient.assigned_doctor = doctor
         patient.save()
-        
+
         return success({
             'message': 'Ingestion successful.',
             'patient': {
@@ -1151,14 +1328,15 @@ def doctor_extract_patient_view(request):
                 'email': patient.email
             }
         })
-        
+
     except Patient.DoesNotExist:
-        return error("The email found in the PDF does not match any registered patient.")
+        return error(
+            "The email found in the PDF does not match any"
+            " registered patient."
+        )
     except Exception as e:
         return error(f"Extraction failed: {str(e)}")
 
-from google.oauth2 import id_token
-from google.auth.transport import requests as google_requests
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -1166,14 +1344,15 @@ def google_login_view(request):
     try:
         data = json_body(request)
         token = data.get('credential') or data.get('token')
-        
+
         # Verify the Google token
         idinfo = id_token.verify_oauth2_token(
             token,
             google_requests.Request(),
-            "65199419430-rs48vg5l50i9oh041bo21blt19kq7uuc.apps.googleusercontent.com"
+            "65199419430-rs48vg5l50i9oh041bo21blt19kq7uuc"
+            ".apps.googleusercontent.com"
         )
-        
+
         email = idinfo.get('email')
         name = idinfo.get('name', email)
 
@@ -1195,7 +1374,10 @@ def google_login_view(request):
             patient.user = user
             patient.save()
 
-        auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        auth_login(
+            request, user,
+            backend='django.contrib.auth.backends.ModelBackend'
+        )
 
         # Critical: Set session variables for existing frontend logic
         request.session['patient_id'] = patient.id
@@ -1218,20 +1400,22 @@ def google_login_view(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def google_doctor_login_view(request):
     try:
         data = json_body(request)
         token = data.get('credential') or data.get('token')
-        
+
         # Verify the Google token
         idinfo = id_token.verify_oauth2_token(
             token,
             google_requests.Request(),
-            "65199419430-rs48vg5l50i9oh041bo21blt19kq7uuc.apps.googleusercontent.com"
+            "65199419430-rs48vg5l50i9oh041bo21blt19kq7uuc"
+            ".apps.googleusercontent.com"
         )
-        
+
         email = idinfo.get('email')
         name = idinfo.get('name', email)
 
@@ -1241,7 +1425,8 @@ def google_doctor_login_view(request):
             defaults={'role': 'doctor', 'is_email_verified': True}
         )
         if created:
-            user.role = 'doctor' # Ensure role is doctor even if user existed (though emails should be unique)
+            # Ensure role is doctor even if user existed
+            user.role = 'doctor'
             user.set_unusable_password()
             user.save()
 
@@ -1254,7 +1439,10 @@ def google_doctor_login_view(request):
             doctor.user = user
             doctor.save()
 
-        auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        auth_login(
+            request, user,
+            backend='django.contrib.auth.backends.ModelBackend'
+        )
 
         # Critical: Set session variables
         request.session['doctor_id'] = doctor.id
@@ -1263,7 +1451,11 @@ def google_doctor_login_view(request):
         request.session['role'] = 'doctor'
 
         # Check if profile is complete
-        is_complete = all([doctor.specialization, doctor.license_number, doctor.hospital])
+        is_complete = all([
+            doctor.specialization,
+            doctor.license_number,
+            doctor.hospital,
+        ])
 
         return JsonResponse({
             'success': True,
@@ -1285,7 +1477,7 @@ def complete_patient_profile_view(request):
     patient_id = request.session.get('patient_id')
     if not patient_id:
         return error('Not authenticated as patient.', 401)
-    
+
     data = json_body(request)
     name = data.get('name')
     age = data.get('age')
@@ -1294,12 +1486,16 @@ def complete_patient_profile_view(request):
 
     try:
         patient = Patient.objects.get(id=patient_id)
-        if name: patient.name = name
-        if age: patient.age = age
-        if dob: patient.dob = dob
-        if phone: patient.phone = phone
+        if name:
+            patient.name = name
+        if age:
+            patient.age = age
+        if dob:
+            patient.dob = dob
+        if phone:
+            patient.phone = phone
         patient.save()
-        
+
         # Update session if name changed
         if name:
             request.session['patient_name'] = patient.name
@@ -1316,7 +1512,7 @@ def complete_doctor_profile_view(request):
     doctor_id = request.session.get('doctor_id')
     if not doctor_id:
         return error('Not authenticated as doctor.', 401)
-    
+
     data = json_body(request)
     name = data.get('name')
     specialization = data.get('specialization')
@@ -1326,11 +1522,16 @@ def complete_doctor_profile_view(request):
 
     try:
         doctor = Doctor.objects.get(id=doctor_id)
-        if name: doctor.name = name
-        if specialization: doctor.specialization = specialization
-        if license_number: doctor.license_number = license_number
-        if hospital: doctor.hospital = hospital
-        if phone: doctor.phone = phone
+        if name:
+            doctor.name = name
+        if specialization:
+            doctor.specialization = specialization
+        if license_number:
+            doctor.license_number = license_number
+        if hospital:
+            doctor.hospital = hospital
+        if phone:
+            doctor.phone = phone
         doctor.save()
 
         # Update session if name changed

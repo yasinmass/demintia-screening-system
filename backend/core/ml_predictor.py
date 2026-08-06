@@ -1,11 +1,6 @@
-# core/ml_predictor.py
-# Handles MFCC feature extraction and dementia model inference
-
 import numpy as np
 import joblib
 import librosa
-import os
-import tempfile
 from django.conf import settings
 
 
@@ -42,12 +37,19 @@ def extract_26_features(file_path: str) -> np.ndarray:
     if len(y) < 1600:  # Less than 0.1 seconds
         raise ValueError("Audio too short for analysis (minimum 0.1 seconds).")
 
-    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
-
-    mfcc_mean = np.mean(mfcc, axis=1)   # shape (13,)
-    mfcc_std  = np.std(mfcc, axis=1)    # shape (13,)
-
-    features = np.concatenate([mfcc_mean, mfcc_std]).reshape(1, -1)  # shape (1, 26)
+    mfcc = librosa.feature.mfcc(
+        y=y,
+        sr=sr,
+        n_mfcc=13)
+    mfcc_mean = np.mean(
+        mfcc,
+        axis=1)
+    mfcc_std = np.std(
+        mfcc,
+        axis=1)
+    features = np.concatenate(
+        [mfcc_mean, mfcc_std]
+        ).reshape(1, -1)
     return features
 
 
@@ -64,25 +66,27 @@ def predict_dementia(file_path: str) -> dict:
         raise RuntimeError("Dementia model could not be loaded.")
 
     features = extract_26_features(file_path)
-
-    prediction = model.predict(features)[0]          # 'dementia' or 'normal'
-    probabilities = model.predict_proba(features)[0]  # [P(dementia), P(normal)]
-
-    # classes_ = ['dementia', 'normal'] — index 0 = dementia, index 1 = normal
+    prediction = model.predict(features)[0]
+    probabilities = model.predict_proba(features)[0]
     class_list = list(model.classes_)
     dem_idx = class_list.index('dementia')
     nor_idx = class_list.index('normal')
 
     return {
         'prediction': prediction,
-        'dementia_probability': round(float(probabilities[dem_idx]) * 100, 1),
-        'normal_probability':   round(float(probabilities[nor_idx]) * 100, 1),
+        'dementia_probability': round(
+            float(probabilities[dem_idx]) * 100, 1),
+        'normal_probability':   round(
+            float(probabilities[nor_idx]) * 100, 1),
     }
 
 
-def combined_risk_level(ml_prediction: str, ml_dementia_prob: float, quiz_total: int) -> str:
+def combined_risk_level(
+    ml_prediction: str, ml_dementia_prob: float, quiz_total: int
+        ) -> str:
     """
-    Combines ML audio model output + cognitive quiz score into one final risk level.
+    Combines ML audio model output +
+    cognitive quiz score into one final risk level.
 
     Logic:
     - HIGH:     ML says dementia (prob > 55%)  AND  quiz score < 20
@@ -90,7 +94,7 @@ def combined_risk_level(ml_prediction: str, ml_dementia_prob: float, quiz_total:
     - LOW:      ML says normal    AND  quiz score >= 20
     """
     ml_positive = ml_prediction == 'dementia' and ml_dementia_prob > 55.0
-    quiz_poor   = quiz_total < 20
+    quiz_poor = quiz_total < 20
 
     if ml_positive and quiz_poor:
         return 'High'

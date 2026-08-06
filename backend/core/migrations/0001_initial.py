@@ -17,18 +17,51 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='User',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('password', models.CharField(max_length=128, verbose_name='password')),
-                ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
-                ('is_superuser', models.BooleanField(default=False, help_text='Designates that this user has all permissions without explicitly assigning them.', verbose_name='superuser status')),
+                ('id', models.BigAutoField(
+                    auto_created=True,
+                    primary_key=True,
+                    serialize=False,
+                    verbose_name='ID')),
+                ('password', models.CharField(
+                    max_length=128,
+                    verbose_name='password')),
+                ('last_login', models.DateTimeField(
+                    blank=True,
+                    null=True,
+                    verbose_name='last login')),
+                ('is_superuser', models.BooleanField(
+                    default=False,
+                    help_text='Designates that this user has all permissions',
+                    verbose_name='superuser status')),
                 ('email', models.EmailField(max_length=254, unique=True)),
-                ('role', models.CharField(choices=[('patient', 'Patient'), ('doctor', 'Doctor'), ('admin', 'Admin')], default='patient', max_length=10)),
+                ('role', models.CharField(
+                    choices=[
+                        ('patient', 'Patient'),
+                        ('doctor', 'Doctor'),
+                        ('admin', 'Admin')
+                        ],
+                        default='patient',
+                        max_length=10
+                    )
+                ),
                 ('is_active', models.BooleanField(default=True)),
                 ('is_staff', models.BooleanField(default=False)),
                 ('is_email_verified', models.BooleanField(default=False)),
                 ('date_joined', models.DateTimeField(auto_now_add=True)),
-                ('groups', models.ManyToManyField(blank=True, help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.', related_name='user_set', related_query_name='user', to='auth.group', verbose_name='groups')),
-                ('user_permissions', models.ManyToManyField(blank=True, help_text='Specific permissions for this user.', related_name='user_set', related_query_name='user', to='auth.permission', verbose_name='user permissions')),
+                ('groups', models.ManyToManyField(
+                    blank=True,
+                    help_text='A user will get all permissions',
+                    related_name='user_set',
+                    related_query_name='user',
+                    to='auth.group',
+                    verbose_name='groups')),
+                ('user_permissions', models.ManyToManyField(
+                    blank=True,
+                    help_text='Specific permissions for this user.',
+                    related_name='user_set',
+                    related_query_name='user',
+                    to='auth.permission',
+                    verbose_name='user permissions')),
             ],
             options={
                 'abstract': False,
@@ -37,16 +70,34 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Doctor',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(
+                    auto_created=True,
+                    primary_key=True,
+                    serialize=False,
+                    verbose_name='ID')),
                 ('name', models.CharField(max_length=200)),
-                ('email', models.EmailField(max_length=254, unique=True)),
+                ('email',
+                models.EmailField(
+                    max_length=254,
+                    unique=True
+                    )
+                ),
                 ('password', models.CharField(max_length=256)),
-                ('specialization', models.CharField(default='Neurology', max_length=200)),
+                ('specialization', models.CharField(
+                    default='Neurology',
+                    max_length=200
+                    )
+                ),
                 ('license_number', models.CharField(blank=True, max_length=100)),
                 ('hospital', models.CharField(blank=True, max_length=200)),
                 ('phone', models.CharField(blank=True, max_length=20, null=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('user', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='doctor_profile', to=settings.AUTH_USER_MODEL)),
+                ('user', models.OneToOneField(
+                    blank=True,
+                    null=True,
+                    on_delete=django.db.models.deletion.CASCADE,
+                    related_name='doctor_profile',
+                    to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'verbose_name': 'Doctor',
@@ -57,7 +108,13 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Patient',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(
+                    auto_created=True,
+                    primary_key=True,
+                    serialize=False,
+                    verbose_name='ID'
+                    )
+                ),
                 ('name', models.CharField(max_length=200)),
                 ('email', models.EmailField(max_length=254, unique=True)),
                 ('password', models.CharField(max_length=256)),
@@ -65,8 +122,17 @@ class Migration(migrations.Migration):
                 ('dob', models.DateField(blank=True, null=True)),
                 ('phone', models.CharField(blank=True, max_length=20, null=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('assigned_doctor', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='patients', to='core.doctor')),
-                ('user', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='patient_profile', to=settings.AUTH_USER_MODEL)),
+                ('assigned_doctor', models.ForeignKey(
+                    blank=True,
+                    null=True,
+                    on_delete=django.db.models.deletion.SET_NULL,
+                    related_name='patients', to='core.doctor')),
+                ('user', models.OneToOneField(
+                    blank=True,
+                    null=True,
+                    on_delete=django.db.models.deletion.CASCADE,
+                    related_name='patient_profile',
+                    to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'verbose_name': 'Patient',
@@ -77,7 +143,11 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='MOCAAssessment',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(
+                    auto_created=True,
+                    primary_key=True,
+                    serialize=False,
+                    verbose_name='ID')),
                 ('visuospatial_score', models.IntegerField(default=0)),
                 ('naming_score', models.IntegerField(default=0)),
                 ('memory_score', models.IntegerField(default=0)),
@@ -91,7 +161,10 @@ class Migration(migrations.Migration):
                 ('total_moca_score', models.IntegerField(default=0)),
                 ('answers_json', models.JSONField(blank=True, default=dict)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('patient', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='moca_assessments', to='core.patient')),
+                ('patient', models.ForeignKey(
+                    on_delete=django.db.models.deletion.CASCADE,
+                    related_name='moca_assessments',
+                    to='core.patient')),
             ],
             options={
                 'verbose_name': 'MOCA Assessment',
@@ -103,14 +176,31 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ClinicalPlan',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('plan_type', models.CharField(choices=[('exercise', 'Exercise Schedule'), ('diet', 'Diet Chart'), ('task', 'Clinical Task'), ('prescription', 'Doctor Prescription')], default='exercise', max_length=20)),
+                ('id', models.BigAutoField(
+                    auto_created=True,
+                    primary_key=True,
+                    serialize=False,
+                    verbose_name='ID')),
+                ('plan_type', models.CharField(
+                    choices=[
+                        ('exercise', 'Exercise Schedule'),
+                        ('diet', 'Diet Chart'),
+                        ('task', 'Clinical Task'),
+                        ('prescription', 'Doctor Prescription')
+                        ],
+                        default='exercise', max_length=20)),
                 ('content', models.JSONField(default=dict)),
                 ('special_instructions', models.TextField(blank=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('doctor', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='plans', to='core.doctor')),
-                ('patient', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='plans', to='core.patient')),
+                ('doctor', models.ForeignKey(
+                    on_delete=django.db.models.deletion.CASCADE,
+                    related_name='plans',
+                    to='core.doctor')),
+                ('patient', models.ForeignKey(
+                    on_delete=django.db.models.deletion.CASCADE,
+                    related_name='plans',
+                    to='core.patient')),
             ],
             options={
                 'verbose_name': 'Clinical Plan',
@@ -122,7 +212,11 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Assessment',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(
+                    auto_created=True,
+                    primary_key=True,
+                    serialize=False,
+                    verbose_name='ID')),
                 ('orientation_score', models.IntegerField(default=0)),
                 ('memory_score', models.IntegerField(default=0)),
                 ('executive_score', models.IntegerField(default=0)),
@@ -132,12 +226,26 @@ class Migration(migrations.Migration):
                 ('pause_duration', models.FloatField(default=0.0)),
                 ('word_count', models.IntegerField(default=0)),
                 ('recording_duration', models.FloatField(default=0.0)),
-                ('ml_prediction', models.CharField(choices=[('dementia', 'Dementia Detected'), ('normal', 'Normal'), ('pending', 'Pending')], default='pending', max_length=10)),
+                ('ml_prediction', models.CharField(
+                    choices=[
+                        ('dementia', 'Dementia Detected'),
+                        ('normal', 'Normal'),
+                        ('pending', 'Pending')],
+                        default='pending',
+                        max_length=10)),
                 ('ml_dementia_probability', models.FloatField(default=0.0)),
                 ('ml_normal_probability', models.FloatField(default=0.0)),
-                ('risk_level', models.CharField(choices=[('Low', 'Low Risk'), ('Moderate', 'Moderate Risk'), ('High', 'High Risk')], default='Low', max_length=10)),
+                ('risk_level', models.CharField(
+                    choices=[('Low', 'Low Risk'),
+                    ('Moderate', 'Moderate Risk'),
+                    ('High', 'High Risk')],
+                    default='Low',
+                    max_length=10)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('patient', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='assessments', to='core.patient')),
+                ('patient', models.ForeignKey(
+                    on_delete=django.db.models.deletion.CASCADE,
+                    related_name='assessments',
+                    to='core.patient')),
             ],
             options={
                 'verbose_name': 'Assessment',
@@ -149,12 +257,22 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TaskCompletion',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(
+                    auto_created=True,
+                    primary_key=True,
+                    serialize=False,
+                    verbose_name='ID')),
                 ('task_id', models.CharField(max_length=100)),
                 ('completed_at', models.DateTimeField(auto_now_add=True)),
                 ('notes', models.TextField(blank=True, null=True)),
-                ('patient', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='completions', to='core.patient')),
-                ('plan', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='completions', to='core.clinicalplan')),
+                ('patient', models.ForeignKey(
+                    on_delete=django.db.models.deletion.CASCADE,
+                    related_name='completions',
+                    to='core.patient')),
+                ('plan', models.ForeignKey(
+                    on_delete=django.db.models.deletion.CASCADE,
+                    related_name='completions',
+                    to='core.clinicalplan')),
             ],
             options={
                 'verbose_name': 'Task Completion',
