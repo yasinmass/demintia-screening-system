@@ -16,6 +16,7 @@ export default function Sidebar({ role, isOpen, onClose }) {
         { to: '/patient', label: 'Home', icon: '🏠' },
         { to: '/patient/test', label: 'AI Screening', icon: '🧠' },
         { to: '/patient/results', label: 'My Reports', icon: '📜' },
+        { to: '/patient/schedule', label: 'Care Plan & Tasks', icon: '📅' },
         { to: '/patient/notifications', label: 'Messages', icon: '💬' },
     ];
 
@@ -44,27 +45,43 @@ export default function Sidebar({ role, isOpen, onClose }) {
                 </div>
 
                 <nav className="sidebar-nav">
-                    <div className="nav-section-label">{role === 'doctor' ? 'Clinical Workspace' : 'Health Portal'}</div>
+                    <div className="nav-section-label text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        {role === 'doctor' ? 'Doctor Portal' : 'Patient Menu'}
+                    </div>
                     {links.map(link => (
-                        <NavLink key={link.to} to={link.to} end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={onClose}>
-                            <span className="nav-icon text-lg">{link.icon}</span>
-                            <span className="font-black uppercase tracking-widest text-[10px]">{link.label}</span>
-                            {link.badge && <span className="nav-badge">{link.badge}</span>}
+                        <NavLink 
+                            key={link.to} 
+                            to={link.to} 
+                            end 
+                            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''} flex items-center gap-3 px-4 py-3 rounded-xl transition-all`} 
+                            onClick={onClose}
+                        >
+                            <span className="text-xl">{link.icon}</span>
+                            <span className="font-bold text-sm tracking-normal text-slate-200">{link.label}</span>
+                            {link.badge && <span className="nav-badge ml-auto">{link.badge}</span>}
                         </NavLink>
                     ))}
                 </nav>
 
-                <div className="sidebar-footer">
-                    <div className="sidebar-user mb-4">
-                        <div className="sidebar-avatar font-black">{name[0]}</div>
+                <div className="sidebar-footer pt-4 border-t border-slate-700/50">
+                    <div className="sidebar-user mb-3 flex items-center gap-3">
+                        <div className="sidebar-avatar font-bold text-base bg-blue-600 text-white w-9 h-9 rounded-full flex items-center justify-center">
+                            {name[0]?.toUpperCase() || 'U'}
+                        </div>
                         <div className="sidebar-user-info max-w-[140px] truncate">
-                            <p className="font-black text-[11px] uppercase tracking-tight truncate">{name}</p>
-                            <span className="text-[10px] font-bold text-gray-500 uppercase truncate">{role === 'doctor' ? 'Neurologist' : 'Patient'}</span>
+                            <p className="font-bold text-xs text-white truncate">{name}</p>
+                            <span className="text-[11px] font-medium text-slate-400 capitalize truncate block">
+                                {role === 'doctor' ? 'Clinician' : 'Patient'}
+                            </span>
                         </div>
                     </div>
-                    <button className="nav-item border border-white/10 mt-4 hover:bg-red-500/10 hover:text-red-400 transition-all font-black" onClick={handleLogout}>
-                        <span className="nav-icon">🚪</span>
-                        <span className="uppercase tracking-widest text-[9px]">Terminate Session</span>
+                    
+                    <button 
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/15 hover:bg-red-600 text-red-200 hover:text-white border border-red-500/30 rounded-xl transition-all text-xs font-bold cursor-pointer shadow-sm" 
+                        onClick={handleLogout}
+                    >
+                        <span>🚪</span>
+                        <span>Log Out</span>
                     </button>
                 </div>
             </aside>

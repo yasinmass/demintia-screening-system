@@ -90,26 +90,26 @@ export default function DoctorLogin() {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 ml-1">Professional Email</label>
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1.5">Professional Email</label>
                             <input
                                 type="email"
-                                className="w-full bg-gray-50 border border-gray-100 focus:border-teal-500 focus:bg-white px-5 py-4 rounded-xl text-sm font-medium transition-all outline-none"
+                                className="w-full bg-white border-2 border-gray-200 focus:border-teal-600 px-4 py-3.5 rounded-xl text-base font-semibold text-gray-900 transition-all outline-none"
                                 placeholder="dr.smith@example.com"
                                 required
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
                             />
                         </div>
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center ml-1">
-                                <label className="text-xs font-bold text-gray-500">Password</label>
+                        <div>
+                            <div className="flex justify-between items-center mb-1.5">
+                                <label className="text-xs font-bold text-gray-700">Password</label>
                                 <a href="#" className="text-xs font-bold text-teal-600 hover:underline">Support</a>
                             </div>
                             <input
                                 type="password"
-                                className="w-full bg-gray-50 border border-gray-100 focus:border-teal-500 focus:bg-white px-5 py-4 rounded-xl text-sm font-medium transition-all outline-none"
+                                className="w-full bg-white border-2 border-gray-200 focus:border-teal-600 px-4 py-3.5 rounded-xl text-base font-semibold text-gray-900 transition-all outline-none"
                                 placeholder="••••••••"
                                 required
                                 value={password}
@@ -120,16 +120,27 @@ export default function DoctorLogin() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-gray-900 hover:bg-black text-white py-4 rounded-xl font-bold text-sm shadow-xl shadow-black/20 transition-all active:scale-95 disabled:opacity-50"
+                            style={{ backgroundColor: '#0f172a', color: '#ffffff' }}
+                            className="w-full bg-slate-900 hover:bg-black text-white py-4 rounded-xl font-extrabold text-base shadow-xl shadow-black/20 transition-all active:scale-[0.98] disabled:opacity-90 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
                         >
-                            {loading ? "Authenticating..." : "Login to Doctor Suite"}
+                            {loading ? (
+                                <>
+                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span className="text-white font-bold">Authenticating...</span>
+                                </>
+                            ) : (
+                                <span className="text-white font-bold tracking-wide">Login to Doctor Suite</span>
+                            )}
                         </button>
                     </form>
 
                     <div className="my-6 flex items-center gap-4">
-                        <div className="h-px flex-1 bg-gray-100"></div>
-                        <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">or continue with</span>
-                        <div className="h-px flex-1 bg-gray-100"></div>
+                        <div className="h-px flex-1 bg-gray-200"></div>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">or continue with</span>
+                        <div className="h-px flex-1 bg-gray-200"></div>
                     </div>
 
                     <div className="flex justify-center">
@@ -142,11 +153,11 @@ export default function DoctorLogin() {
                         />
                     </div>
 
-                    <div className="mt-8 pt-6 border-t border-gray-50 text-center space-y-4">
-                        <p className="text-sm text-gray-400">
-                            Need professional access? <Link to="/signup/doctor" className="text-teal-600 font-bold hover:underline">Register Practice</Link>
+                    <div className="mt-8 pt-6 border-t border-gray-100 text-center space-y-3">
+                        <p className="text-sm font-medium text-gray-500">
+                            Need professional access? <Link to="/signup/doctor" className="text-teal-600 font-bold hover:underline ml-1">Register Practice</Link>
                         </p>
-                        <Link to="/login/patient" className="block text-xs font-bold text-gray-300 hover:text-gray-500 transition-colors">
+                        <Link to="/login/patient" className="block text-xs font-bold text-gray-400 hover:text-gray-700 transition-colors">
                             Return to Patient Login →
                         </Link>
                     </div>

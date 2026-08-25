@@ -93,26 +93,26 @@ export default function PatientLogin() {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 ml-1">Email Address</label>
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1.5">Email Address</label>
                             <input
                                 type="email"
-                                className="w-full bg-gray-50 border border-gray-100 focus:border-primary focus:bg-white px-5 py-4 rounded-xl text-sm font-medium transition-all outline-none"
+                                className="w-full bg-white border-2 border-gray-200 focus:border-blue-600 px-4 py-3.5 rounded-xl text-base font-semibold text-gray-900 transition-all outline-none"
                                 placeholder="name@example.com"
                                 required
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
                             />
                         </div>
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center ml-1">
-                                <label className="text-xs font-bold text-gray-500">Password</label>
-                                <a href="#" className="text-xs font-bold text-primary hover:underline">Forgot?</a>
+                        <div>
+                            <div className="flex justify-between items-center mb-1.5">
+                                <label className="text-xs font-bold text-gray-700">Password</label>
+                                <a href="#" className="text-xs font-bold text-blue-600 hover:underline">Forgot?</a>
                             </div>
                             <input
                                 type="password"
-                                className="w-full bg-gray-50 border border-gray-100 focus:border-primary focus:bg-white px-5 py-4 rounded-xl text-sm font-medium transition-all outline-none"
+                                className="w-full bg-white border-2 border-gray-200 focus:border-blue-600 px-4 py-3.5 rounded-xl text-base font-semibold text-gray-900 transition-all outline-none"
                                 placeholder="••••••••"
                                 required
                                 value={password}
@@ -123,16 +123,27 @@ export default function PatientLogin() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-primary hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-sm shadow-lg shadow-blue-500/20 transition-all active:scale-95 disabled:opacity-50"
+                            style={{ backgroundColor: '#2563eb', color: '#ffffff' }}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-extrabold text-base shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98] disabled:opacity-90 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
                         >
-                            {loading ? "Logging in..." : "Login to Portal"}
+                            {loading ? (
+                                <>
+                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span className="text-white font-bold">Logging in...</span>
+                                </>
+                            ) : (
+                                <span className="text-white font-bold tracking-wide">Login to Portal</span>
+                            )}
                         </button>
                     </form>
 
                     <div className="my-6 flex items-center gap-4">
-                        <div className="h-px flex-1 bg-gray-100"></div>
-                        <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">or continue with</span>
-                        <div className="h-px flex-1 bg-gray-100"></div>
+                        <div className="h-px flex-1 bg-gray-200"></div>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">or continue with</span>
+                        <div className="h-px flex-1 bg-gray-200"></div>
                     </div>
 
                     <div className="flex justify-center">
@@ -145,17 +156,17 @@ export default function PatientLogin() {
                         />
                     </div>
 
-                    <div className="mt-8 pt-6 border-t border-gray-50 text-center space-y-4">
-                        <p className="text-sm text-gray-400">
-                            No account yet? <Link to="/signup/patient" className="text-primary font-bold hover:underline">Create Profile</Link>
+                    <div className="mt-8 pt-6 border-t border-gray-100 text-center space-y-3">
+                        <p className="text-sm font-medium text-gray-500">
+                            No account yet? <Link to="/signup/patient" className="text-blue-600 font-bold hover:underline ml-1">Create Profile</Link>
                         </p>
-                        <Link to="/login/doctor" className="block text-xs font-bold text-gray-300 hover:text-gray-500 transition-colors">
+                        <Link to="/login/doctor" className="block text-xs font-bold text-gray-400 hover:text-gray-700 transition-colors">
                             Professional Access Portal →
                         </Link>
                     </div>
                 </div>
 
-                <p className="mt-8 text-center text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Secure Clinical Gateway</p>
+                <p className="mt-6 text-center text-[11px] font-bold text-white/30 uppercase tracking-[0.2em]">Secure Clinical Gateway</p>
             </div>
         </div>
     );

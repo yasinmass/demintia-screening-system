@@ -67,6 +67,9 @@ export default function DashboardLayout({ role, title, children }) {
 
     const name = (role === 'doctor' ? sessionStorage.getItem('doctor_name') : sessionStorage.getItem('patient_name')) || 'User';
 
+    const [profileOpen, setProfileOpen] = useState(false);
+    const email = (role === 'doctor' ? sessionStorage.getItem('doctor_email') : sessionStorage.getItem('patient_email')) || '';
+
     return (
         <div className="dashboard-layout bg-gray-50">
             {/* Sidebar with overlay on mobile */}
@@ -148,20 +151,23 @@ export default function DashboardLayout({ role, title, children }) {
                             )}
                         </div>
 
-                        <div className="flex items-center gap-3 bg-gray-100 p-1.5 pr-5 rounded-2xl border border-gray-100 cursor-pointer hover:bg-gray-200 transition-all group overflow-hidden" onClick={handleLogout}>
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-white font-black text-base shadow-lg shadow-teal-50 group-hover:scale-105 transition-transform">
-                                {name[0]}
+                        {/* Simple User Badge */}
+                        <div className="flex items-center gap-3 bg-slate-100 px-3.5 py-2 rounded-2xl border border-slate-200">
+                            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                                {name[0]?.toUpperCase() || 'U'}
                             </div>
-                            <div className="hidden lg:block truncate">
-                                <span className="block text-[11px] font-black uppercase tracking-tight text-gray-900 leading-tight truncate">{name}</span>
-                                <span className="block text-[9px] font-bold uppercase tracking-widest text-gray-400 leading-tight">Exit Portal</span>
+                            <div className="hidden sm:block text-left">
+                                <span className="block text-xs font-bold text-slate-800 leading-tight">{name}</span>
+                                <span className="block text-[10px] font-semibold text-slate-500 capitalize leading-tight">
+                                    {role === 'doctor' ? 'Clinician' : 'Patient'}
+                                </span>
                             </div>
                         </div>
                     </div>
                 </header>
 
-                {/* Page Content */}
-                <main className="page-content py-12 px-10 fade-in max-w-[1440px] mx-auto">
+                {/* Main Content Area */}
+                <main className="content-container p-6 md:p-10 max-w-6xl mx-auto">
                     {children}
                 </main>
             </div>

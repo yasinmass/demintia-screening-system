@@ -64,15 +64,17 @@ def signup_view(request):
     user.is_active = True
     user.save()
 
-    # 2. Create Patient Profile
-    patient = Patient.objects.create(
-        user=user,
-        name=name,
-        email=email,
-        age=age,
-        dob=dob if dob else None,
-        phone=phone,
-    )
+    # 2. Update Patient Profile (signal may have already created it)
+    patient, _ = Patient.objects.get_or_create(user=user, defaults={'email': email, 'name': name})
+    patient.name = name
+    patient.email = email
+    if age is not None:
+        patient.age = age
+    if dob:
+        patient.dob = dob
+    if phone:
+        patient.phone = phone
+    patient.save()
 
     # 3. Set Session
     request.session['patient_id'] = patient.id
@@ -236,16 +238,19 @@ def doctor_signup_view(request):
     user.is_active = True
     user.save()
 
-    # 2. Create Doctor Profile
-    doctor = Doctor.objects.create(
-        user=user,
-        name=name,
-        email=email,
-        specialization=specialization,
-        license_number=license_number,
-        hospital=hospital,
-        phone=phone,
-    )
+    # 2. Update Doctor Profile (signal may have already created it)
+    doctor, _ = Doctor.objects.get_or_create(user=user, defaults={'email': email, 'name': name})
+    doctor.name = name
+    doctor.email = email
+    if specialization:
+        doctor.specialization = specialization
+    if license_number:
+        doctor.license_number = license_number
+    if hospital:
+        doctor.hospital = hospital
+    if phone:
+        doctor.phone = phone
+    doctor.save()
 
     # 3. Set Session
     request.session['doctor_id'] = doctor.id

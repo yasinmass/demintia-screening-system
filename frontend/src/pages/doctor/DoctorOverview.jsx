@@ -58,18 +58,18 @@ export default function DoctorOverview() {
     return (
         <DashboardLayout role="doctor" title="Clinical Overview">
             {/* Welcome Banner */}
-            <div className="fade-in mb-8 p-8 border border-gray-200 bg-white rounded-lg shadow-sm flex justify-between items-center">
+            <div className="fade-in mb-8 p-8 border border-gray-200 bg-white rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Clinical Portal</h5>
+                    <h5 className="text-[10px] font-bold text-teal-600 uppercase tracking-widest mb-1">Clinical Portal</h5>
                     <h2 className="text-2xl font-bold text-gray-800">Welcome, Dr. {docName}</h2>
-                    <p className="text-gray-500 text-sm font-medium">NeuroScan Systems · {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    <p className="text-gray-500 text-xs font-medium mt-1">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                 </div>
                 <div className="flex gap-3">
-                    <button className="px-5 py-2.5 bg-gray-50 text-gray-600 font-bold text-xs rounded border border-gray-200 hover:bg-gray-100 transition-colors" onClick={() => navigate('/doctor/messages')}>
-                        Clinical Messaging
+                    <button className="px-5 py-2.5 bg-gray-50 text-gray-700 font-bold text-xs rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors" onClick={() => navigate('/doctor/schedule')}>
+                        Care Plans &amp; Targets
                     </button>
-                    <button className="px-5 py-2.5 bg-primary text-white font-bold text-xs rounded shadow-sm hover:bg-blue-700 transition-colors" onClick={() => navigate('/doctor/patients')}>
-                        Clinical Registry
+                    <button className="px-5 py-2.5 bg-primary text-white font-bold text-xs rounded-xl shadow-sm hover:bg-blue-700 transition-colors" onClick={() => navigate('/doctor/patients')}>
+                        Patient Registry
                     </button>
                 </div>
             </div>

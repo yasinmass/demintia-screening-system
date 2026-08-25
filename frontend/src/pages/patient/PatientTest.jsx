@@ -275,13 +275,22 @@ function VoicePhase({ onDone }) {
                     </p>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                    <button className="btn btn-primary" onClick={() => isRecording ? stopRecording() : startRecording()} disabled={analyzing}>
+                <div className="flex gap-4">
+                    <button 
+                        style={{ backgroundColor: isRecording ? '#dc2626' : '#2563eb', color: '#ffffff' }}
+                        className="flex-1 py-4 px-6 rounded-2xl font-extrabold text-base shadow-lg transition-all active:scale-[0.98] cursor-pointer"
+                        onClick={() => isRecording ? stopRecording() : startRecording()} 
+                        disabled={analyzing}
+                    >
                         {isRecording ? '⏹ Stop Recording' : '🎙 Start Recording'}
                     </button>
-                    <button className="btn btn-secondary" disabled={!nextEnabled} onClick={onDone}
-                        style={{ opacity: nextEnabled ? 1 : .5, cursor: nextEnabled ? 'pointer' : 'not-allowed' }}>
-                        Order: Quiz →
+                    <button 
+                        style={{ backgroundColor: nextEnabled ? '#059669' : '#e2e8f0', color: nextEnabled ? '#ffffff' : '#94a3b8' }}
+                        className="flex-1 py-4 px-6 rounded-2xl font-extrabold text-base shadow-md transition-all active:scale-[0.98]"
+                        disabled={!nextEnabled} 
+                        onClick={onDone}
+                    >
+                        Continue to Next Test →
                     </button>
                 </div>
             </div>
@@ -321,8 +330,16 @@ function QuizPhase({ onDone }) {
     async function finish(counts) {
         setPhase('saving');
         const avgRT = getAverageReactionTime();
-        const scores = { orientation: counts.orientation * 2, memory: counts.memory * 2, executive: counts.executive * 2 };
+        // 4 orientation questions (x2.5 = 10 max), 5 memory (x2 = 10 max), 5 executive (x2 = 10 max) -> Total 30
+        const scores = { 
+            orientation: Math.min(10, Math.round(counts.orientation * 2.5)), 
+            memory: Math.min(10, counts.memory * 2), 
+            executive: Math.min(10, counts.executive * 2) 
+        };
         const finalResults = getFinalOutput(scores, avgRT);
+        sessionStorage.setItem('mmse_score', String(finalResults.total_score));
+        sessionStorage.setItem('mmse_exam_done', '1');
+
         let voiceBio = {}; let mlRes = {};
         try { voiceBio = JSON.parse(sessionStorage.getItem('voice_biomarkers') || '{}'); } catch { }
         try { mlRes = JSON.parse(sessionStorage.getItem('ml_result') || '{}'); } catch { }
@@ -331,45 +348,78 @@ function QuizPhase({ onDone }) {
         try {
             const res = await apiFetch('/assessment/save/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
             const data = await res.json();
-            if (data.success) { sessionStorage.removeItem('voice_biomarkers'); sessionStorage.removeItem('ml_result'); onDone(); }
-            else throw new Error(data.error || 'Save failed');
-        } catch (e) { setErrMsg(e.message); setPhase('error'); }
+            if (data.success) { 
+                sessionStorage.removeItem('voice_biomarkers'); 
+                sessionStorage.removeItem('ml_result'); 
+                onDone(finalResults.total_score); 
+            } else {
+                throw new Error(data.error || 'Save failed');
+            }
+        } catch (e) { 
+            setErrMsg(e.message); 
+            setPhase('error'); 
+        }
     }
 
     const q = questions[step];
 
     if (phase === 'memory') return (
-        <div className="card" style={{ maxWidth: 600, margin: '0 auto' }}>
-            <div className="card-body" style={{ padding: 32, textAlign: 'center' }}>
-                <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>Memory Warm-Up</h3>
-                <p style={{ fontSize: 14, color: 'var(--gray-500)', marginBottom: 24 }}>Memorize these words — you'll be asked about them later</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginBottom: 32 }}>
+        <div className="card shadow-lg border border-slate-200 rounded-3xl" style={{ maxWidth: 620, margin: '0 auto' }}>
+            <div className="card-body" style={{ padding: 36, textAlign: 'center' }}>
+                <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6, color: '#0f172a' }}>Memory Warm-Up</h3>
+                <p style={{ fontSize: 15, color: '#64748b', marginBottom: 28 }}>
+                    Please read and memorize these words carefully. You will be asked about them in the quiz:
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginBottom: 36 }}>
                     {MEMORY_WORDS.map(w => (
-                        <span key={w} style={{ background: 'var(--primary-pale)', color: 'var(--primary)', borderRadius: 'var(--radius-sm)', padding: '12px 24px', fontWeight: 800, fontSize: 18, border: '2px solid var(--primary-pale)' }}>{w}</span>
+                        <span key={w} style={{ background: '#eff6ff', color: '#1d4ed8', borderRadius: 14, padding: '14px 28px', fontWeight: 800, fontSize: 20, border: '2px solid #bfdbfe' }}>
+                            {w}
+                        </span>
                     ))}
                 </div>
-                <button className="btn btn-primary btn-lg" onClick={startQuiz}>I've Memorized Them — Start Quiz →</button>
+                <button 
+                    style={{ backgroundColor: '#2563eb', color: '#ffffff' }}
+                    className="w-full py-4 rounded-2xl font-extrabold text-base shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98] cursor-pointer" 
+                    onClick={startQuiz}
+                >
+                    I Have Memorized Them — Start Questionnaire →
+                </button>
             </div>
         </div>
     );
 
     if (phase === 'quiz') return (
-        <div className="card" style={{ maxWidth: 600, margin: '0 auto', overflow: 'hidden' }}>
-            <div style={{ height: 6, background: 'var(--gray-200)' }}>
-                <div style={{ height: '100%', background: 'linear-gradient(90deg,var(--primary),var(--accent))', width: `${progress}%`, transition: 'width .5s ease', borderRadius: '0 4px 4px 0' }} />
+        <div className="card shadow-lg border border-slate-200 rounded-3xl overflow-hidden" style={{ maxWidth: 640, margin: '0 auto' }}>
+            <div style={{ height: 8, background: '#e2e8f0' }}>
+                <div style={{ height: '100%', background: 'linear-gradient(90deg, #2563eb, #0d9488)', width: `${progress}%`, transition: 'width .5s ease' }} />
             </div>
-            <div className="card-body" style={{ padding: 32 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span className="badge badge-primary" style={{ textTransform: 'capitalize' }}>{q?.domain} Assessment</span>
-                    <span style={{ fontSize: 13, color: 'var(--gray-400)', fontWeight: 600 }}>{step + 1} / {questions.length}</span>
+            <div className="card-body" style={{ padding: 36 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <span style={{ backgroundColor: '#dbeafe', color: '#1e40af', padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 800, textTransform: 'capitalize' }}>
+                        {q?.domain} Section
+                    </span>
+                    <span style={{ fontSize: 14, color: '#64748b', fontWeight: 700 }}>Question {step + 1} of {questions.length}</span>
                 </div>
-                <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 24, color: 'var(--gray-800)', lineHeight: 1.5 }}>{q?.q}</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 28, color: '#0f172a', lineHeight: 1.4 }}>{q?.q}</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {q?.opts.map(opt => (
-                        <button key={opt} onClick={() => handleAnswer(opt)}
-                            style={{ padding: '14px 18px', border: '2px solid var(--gray-200)', borderRadius: 'var(--radius-sm)', background: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', textAlign: 'left', transition: 'all .15s', color: 'var(--gray-700)' }}
-                            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'var(--primary-light)'; e.currentTarget.style.color = 'var(--primary)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--gray-200)'; e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = 'var(--gray-700)'; }}
+                        <button 
+                            key={opt} 
+                            onClick={() => handleAnswer(opt)}
+                            style={{ 
+                                padding: '16px 20px', 
+                                border: '2px solid #cbd5e1', 
+                                borderRadius: 14, 
+                                background: '#ffffff', 
+                                fontSize: 17, 
+                                fontWeight: 700, 
+                                cursor: 'pointer', 
+                                textAlign: 'left', 
+                                transition: 'all .15s', 
+                                color: '#1e293b' 
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = '#2563eb'; e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.color = '#1d4ed8'; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.color = '#1e293b'; }}
                         >
                             {opt}
                         </button>
@@ -513,84 +563,112 @@ function ExamHub({ onStart }) {
     const voiceDone = !!sessionStorage.getItem('voice_exam_done');
     const mmseDone = !!sessionStorage.getItem('mmse_exam_done');
     const mocaDone = !!sessionStorage.getItem('moca_exam_done');
-    const mocaScore = sessionStorage.getItem('moca_score');
+    
+    const voiceScore = sessionStorage.getItem('voice_score') ? parseInt(sessionStorage.getItem('voice_score'), 10) : null;
+    const mmseScore = sessionStorage.getItem('mmse_score') ? parseInt(sessionStorage.getItem('mmse_score'), 10) : null;
+    const mocaScore = sessionStorage.getItem('moca_score') ? parseInt(sessionStorage.getItem('moca_score'), 10) : null;
+    
     const completedCount = [voiceDone, mmseDone, mocaDone].filter(Boolean).length;
-
-    const voiceScore = sessionStorage.getItem('voice_score') ? parseInt(sessionStorage.getItem('voice_score')) : null;
+    
+    // Calculate current cumulative score
+    let cumulativeScore = 0;
+    let maxPossible = 0;
+    if (voiceDone && voiceScore !== null) { cumulativeScore += voiceScore; maxPossible += 40; }
+    if (mmseDone && mmseScore !== null) { cumulativeScore += mmseScore; maxPossible += 30; }
+    if (mocaDone && mocaScore !== null) { cumulativeScore += mocaScore; maxPossible += 30; }
 
     const exams = [
         {
-            key: 'voice', icon: '🎙', title: 'Voice Test', marks: 40,
+            key: 'voice', icon: '🎙️', title: 'Voice Test', marks: 40,
             borderColor: '#2563EB', done: voiceDone,
-            scoreText: voiceDone && voiceScore !== null ? `${voiceScore} / 40` : null,
+            scoreText: voiceDone && voiceScore !== null ? `${voiceScore} / 40` : (voiceDone ? 'Completed' : null),
             desc: 'Record your voice for 10–60 seconds. AI analyzes pause patterns, speech rate, and vocal biomarkers.',
             steps: ['Find a quiet room', 'Press Start and speak naturally', 'Talk about your day or read the prompt'],
         },
         {
             key: 'mmse', icon: '🧠', title: 'MMSE Questionnaire', marks: 30,
-            borderColor: '#0EA5E9', done: mmseDone,
-            scoreText: mmseDone ? '30 marks done' : null,
+            borderColor: '#0284c7', done: mmseDone,
+            scoreText: mmseDone && mmseScore !== null ? `${mmseScore} / 30` : (mmseDone ? 'Completed' : null),
             desc: 'Answer questions about orientation, memory, and executive function. Multiple-choice, ~5 minutes.',
             steps: ['No preparation needed', 'Answer each question honestly', 'Results analyzed instantly'],
         },
         {
             key: 'moca', icon: '📋', title: 'MOCA Test', marks: 30,
-            borderColor: '#0D9488', done: mocaDone,
-            scoreText: mocaDone && mocaScore ? `${mocaScore} / 30` : null,
+            borderColor: '#0d9488', done: mocaDone,
+            scoreText: mocaDone && mocaScore !== null ? `${mocaScore} / 30` : (mocaDone ? 'Completed' : null),
             desc: 'Montreal Cognitive Assessment: 10 interactive sections covering memory, attention, language, and more.',
-            steps: ['Allow microphone access', 'Complete each section in order', '5-minute delayed recall timer runs automatically'],
+            steps: ['Allow microphone access', 'Complete each section in order', 'Automatic evaluation'],
         },
     ];
 
     return (
         <div>
-            <div className="page-header">
-                <h2>AI Screening Tests</h2>
-                <p>Complete all 3 tests to get your full cognitive score out of 100</p>
+            <div className="page-header mb-6">
+                <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900">Cognitive Screening Tests</h2>
+                <p className="text-slate-500 font-medium">Complete the 3 quick screening tasks to evaluate your overall cognitive score out of 100.</p>
             </div>
 
-            <div style={{ background: '#fff', border: '1px solid var(--gray-200)', borderRadius: 10, padding: '16px 20px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)' }}>Progress</span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>{completedCount} / 3 completed</span>
+            {/* Progress / Summary Box */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 mb-6 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex-1 w-full">
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-bold text-slate-700">Screening Progress</span>
+                        <span className="text-sm font-extrabold text-blue-600">{completedCount} of 3 completed</span>
                     </div>
-                    <div className="progress">
-                        <div className="progress-bar blue" style={{ width: `${(completedCount / 3) * 100}%` }} />
+                    <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                        <div 
+                            className="bg-blue-600 h-full transition-all duration-500 rounded-full" 
+                            style={{ width: `${(completedCount / 3) * 100}%` }}
+                        />
                     </div>
                 </div>
-                {completedCount === 3 && (
-                    <span style={{ background: 'var(--success-light)', color: 'var(--success)', padding: '4px 14px', borderRadius: 20, fontWeight: 700, fontSize: 13, flexShrink: 0 }}>✓ All done!</span>
+
+                {maxPossible > 0 && (
+                    <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 px-5 py-2.5 rounded-2xl">
+                        <span className="text-xs font-bold text-blue-800 uppercase tracking-wider">Score So Far:</span>
+                        <span className="text-xl font-extrabold text-blue-900">{cumulativeScore} <span className="text-xs text-blue-600 font-bold">/ {maxPossible}</span></span>
+                    </div>
                 )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Test Cards */}
+            <div className="space-y-4 mb-8">
                 {exams.map(exam => (
-                    <div key={exam.key} style={{ background: '#fff', border: '1px solid var(--gray-200)', borderLeft: `4px solid ${exam.borderColor}`, borderRadius: 10, padding: 24 }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-                            <div style={{ flex: 1, minWidth: 220 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-                                    <span style={{ fontSize: 22 }}>{exam.icon}</span>
-                                    <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--gray-900)', margin: 0 }}>{exam.title}</h3>
-                                    <span style={{ fontSize: 12, color: 'var(--gray-400)', fontWeight: 600 }}>— {exam.marks} marks</span>
+                    <div 
+                        key={exam.key} 
+                        style={{ borderLeftColor: exam.borderColor, borderLeftWidth: '6px' }}
+                        className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all"
+                    >
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-3 flex-wrap mb-2">
+                                    <span className="text-2xl">{exam.icon}</span>
+                                    <h3 className="text-lg font-extrabold text-slate-900">{exam.title}</h3>
+                                    <span className="text-xs font-bold text-slate-400">({exam.marks} marks)</span>
                                     {exam.done && (
-                                        <span style={{ background: 'var(--success-light)', color: 'var(--success)', borderRadius: 20, padding: '2px 10px', fontSize: 12, fontWeight: 700 }}>
-                                            ✓ {exam.scoreText || 'Done'}
+                                        <span className="bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-full px-3 py-0.5 text-xs font-extrabold flex items-center gap-1">
+                                            <span>✓</span>
+                                            <span>{exam.scoreText || 'Completed'}</span>
                                         </span>
                                     )}
                                 </div>
-                                <p style={{ fontSize: 13, color: 'var(--gray-500)', lineHeight: 1.6, marginBottom: 10 }}>{exam.desc}</p>
-                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                <p className="text-sm text-slate-600 font-medium mb-3">{exam.desc}</p>
+                                <div className="flex gap-2 flex-wrap">
                                     {exam.steps.map((s, i) => (
-                                        <span key={i} style={{ fontSize: 11, background: 'var(--gray-100)', color: 'var(--gray-600)', borderRadius: 6, padding: '3px 8px', fontWeight: 500 }}>
+                                        <span key={i} className="text-xs bg-slate-100 text-slate-600 rounded-lg px-2.5 py-1 font-semibold">
                                             {i + 1}. {s}
                                         </span>
                                     ))}
                                 </div>
                             </div>
-                            <div style={{ flexShrink: 0, paddingTop: 4 }}>
-                                <button className="btn btn-primary" style={{ background: exam.borderColor }} onClick={() => onStart(exam.key)}>
-                                    {exam.done ? '↻ Retake' : '▶ Start'} Test
+
+                            <div className="w-full sm:w-auto">
+                                <button 
+                                    style={{ backgroundColor: exam.borderColor, color: '#ffffff' }}
+                                    className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
+                                    onClick={() => onStart(exam.key)}
+                                >
+                                    {exam.done ? '↻ Retake Test' : '▶ Start Test'}
                                 </button>
                             </div>
                         </div>
@@ -599,14 +677,21 @@ function ExamHub({ onStart }) {
             </div>
 
             {completedCount === 3 && (
-                <div style={{ marginTop: 20, padding: 16, background: 'var(--success-light)', border: '1px solid #6EE7B7', borderRadius: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <span style={{ fontSize: 24 }}>🎉</span>
+                <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between gap-4 flex-wrap">
+                    <div className="flex items-center gap-3">
+                        <span className="text-3xl">🎉</span>
                         <div>
-                            <p style={{ fontWeight: 700, color: '#065F46' }}>All 3 tests complete!</p>
-                            <p style={{ fontSize: 13, color: '#047857' }}>View your full results in <a href="/patient/results" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>My Reports</a>.</p>
+                            <p className="font-extrabold text-emerald-900 text-base">All 3 Screening Tests Complete!</p>
+                            <p className="text-sm text-emerald-700">Total Score: <strong>{cumulativeScore} / 100</strong>. View complete diagnostic report in My Reports.</p>
                         </div>
                     </div>
+                    <a 
+                        href="/patient/results" 
+                        style={{ backgroundColor: '#059669', color: '#ffffff' }}
+                        className="px-6 py-3 bg-emerald-600 text-white font-bold text-sm rounded-xl shadow-md hover:bg-emerald-700 transition-all inline-block"
+                    >
+                        View Full Medical Report →
+                    </a>
                 </div>
             )}
         </div>
@@ -627,11 +712,11 @@ export default function PatientTest() {
 
                 {mode === 'voice' && (
                     <div>
-                        <div style={{ marginBottom: 16 }}>
+                        <div className="mb-4">
                             <button className="btn btn-secondary btn-sm" onClick={back}>← Back to Tests</button>
                         </div>
-                        <div className="page-header">
-                            <h2>Voice Test <span style={{ fontSize: 14, fontWeight: 400, color: 'var(--gray-400)' }}>— 40 marks</span></h2>
+                        <div className="page-header mb-6">
+                            <h2>Voice Biomarker Test <span style={{ fontSize: 14, fontWeight: 400, color: 'var(--gray-400)' }}>— 40 marks</span></h2>
                             <p>Speak naturally for 10–60 seconds about your day or read the suggested prompt.</p>
                         </div>
                         <VoicePhase onDone={() => { sessionStorage.setItem('voice_exam_done', '1'); back(); }} />
@@ -640,20 +725,24 @@ export default function PatientTest() {
 
                 {mode === 'mmse' && (
                     <div>
-                        <div style={{ marginBottom: 16 }}>
+                        <div className="mb-4">
                             <button className="btn btn-secondary btn-sm" onClick={back}>← Back to Tests</button>
                         </div>
-                        <div className="page-header">
+                        <div className="page-header mb-6">
                             <h2>MMSE Questionnaire <span style={{ fontSize: 14, fontWeight: 400, color: 'var(--gray-400)' }}>— 30 marks</span></h2>
                             <p>Answer questions about orientation, memory, and executive function.</p>
                         </div>
-                        <QuizPhase onDone={() => { sessionStorage.setItem('mmse_exam_done', '1'); back(); }} />
+                        <QuizPhase onDone={(score) => { 
+                            sessionStorage.setItem('mmse_exam_done', '1'); 
+                            if (score !== undefined) sessionStorage.setItem('mmse_score', String(score));
+                            back(); 
+                        }} />
                     </div>
                 )}
 
                 {mode === 'moca' && (
                     <div>
-                        <div style={{ marginBottom: 16 }}>
+                        <div className="mb-4">
                             <button className="btn btn-secondary btn-sm" onClick={back}>← Back to Tests</button>
                         </div>
                         <MOCATest embedded onComplete={(score) => {
