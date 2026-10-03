@@ -129,11 +129,22 @@ EOF
                 sh '''
                     sleep 5
 
-                    curl -f http://localhost:8000/api/health/
-                    curl -f http://localhost:9000/
+                    echo "Checking Django backend..."
+                    docker compose exec -T backend \
+                        curl -fsS http://localhost:8000/api/health/
+
+                    echo "Checking Nginx..."
+
+                    NETWORK=$(docker inspect dementia-nginx \
+                        --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}}{{end}}')
+
+                    docker run --rm \
+                        --network "$NETWORK" \
+                        curlimages/curl:latest \
+                        curl -fsS http://nginx/
                 '''
             }
-        }
+}
     }
 
     post {
