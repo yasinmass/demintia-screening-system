@@ -1,8 +1,10 @@
 pipeline{
-    agent any;
+    agent any
     stages {
         stage('scm pull'){
-            checkout scm;
+            steps{
+                checkout scm
+            }
         }
     }
 }
