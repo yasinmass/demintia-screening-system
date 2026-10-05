@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent {labels 'aws-worker'}
 
     environment {
         PROJECT_NAME = 'dementia-screening'
